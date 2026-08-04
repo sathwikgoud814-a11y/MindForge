@@ -155,6 +155,63 @@ export function SystemProvider({ children }) {
     localStorage.setItem('solo_calendar_view', JSON.stringify(viewMode));
   };
 
+  // Real-Time Active Elapsed Time Tracker (in milliseconds)
+  const [activeElapsedMs, setActiveElapsedMs] = useState(() => {
+    const saved = localStorage.getItem('solo_real_time_invested_ms');
+    return saved ? Number(saved) : 3600000; // Default 1 hour (3,600,000 ms) instead of 2.4h!
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveElapsedMs(prev => {
+        const next = prev + 1000;
+        localStorage.setItem('solo_real_time_invested_ms', String(next));
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const realHoursInvested = (activeElapsedMs / 3600000).toFixed(1);
+
+  // Keep character.hoursInvested updated with real elapsed time
+  useEffect(() => {
+    if (character && character.hoursInvested !== parseFloat(realHoursInvested)) {
+      setCharacter(prev => ({ ...prev, hoursInvested: parseFloat(realHoursInvested) }));
+    }
+  }, [realHoursInvested]);
+
+  const updateCharacterName = (newName) => {
+    if (!newName.trim()) return;
+    const updated = { ...character, name: newName.trim() };
+    setCharacter(updated);
+    localStorage.setItem('solo_character', JSON.stringify(updated));
+  };
+
+  const resetCharacterProgress = () => {
+    const resetChar = {
+      ...character,
+      level: 1,
+      xp: 0,
+      dp: 100,
+      hoursInvested: 1.0,
+      completedMissionsCount: 0,
+      rank: 'Recruit Rank',
+      streakDays: 1,
+    };
+    setCharacter(resetChar);
+    setMissions([]);
+    localStorage.setItem('solo_character', JSON.stringify(resetChar));
+    localStorage.setItem('solo_missions', JSON.stringify([]));
+    localStorage.setItem('solo_real_time_invested_ms', String(3600000));
+    setActiveElapsedMs(3600000);
+  };
+
+  const deleteAccountData = () => {
+    localStorage.clear();
+    window.location.reload();
+  };
+
   // Dynamic Hunter Rating Calculation & Promotion Trigger
   const hunterRating = HunterRatingEngine.calculateRating({ character, attributes, customSkills, missions, activeDuels });
   const evaluatedRank = HunterRatingEngine.getRankForRating(hunterRating);
@@ -963,6 +1020,10 @@ export function SystemProvider({ children }) {
       setRankPromotionOverlay,
       privateCalendarSettings,
       updatePrivateCalendarSettings,
+      realHoursInvested,
+      updateCharacterName,
+      resetCharacterProgress,
+      deleteAccountData,
       customEvents,
       activeCalendarView,
       addCustomEvent,

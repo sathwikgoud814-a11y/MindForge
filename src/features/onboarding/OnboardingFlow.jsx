@@ -500,9 +500,36 @@ export function OnboardingFlow() {
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  onChange={e => {
+                    const newName = e.target.value;
+                    const autoTag = `@${newName.toLowerCase().replace(/[^a-z0-9_]/g, '')}`;
+                    setFormData({
+                      ...formData,
+                      name: newName,
+                      userIdTag: formData.userIdTag || autoTag
+                    });
+                  }}
                   className="w-full p-3.5 rounded-2xl border border-border-subtle bg-surface-subtle text-primary font-bold focus:outline-none focus:ring-2 focus:ring-gold"
                 />
+              </div>
+
+              <div>
+                <label className="block font-bold text-primary mb-1">Unique Hunter User ID Tag (Permanent Handle)</label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-3.5 text-gold font-mono font-bold text-sm">@</span>
+                  <input
+                    type="text"
+                    required
+                    placeholder="sathwik9912"
+                    value={(formData.userIdTag || `@${(formData.name || '').toLowerCase().replace(/[^a-z0-9_]/g, '')}`).replace(/^@/, '')}
+                    onChange={e => {
+                      const clean = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+                      setFormData({ ...formData, userIdTag: `@${clean}` });
+                    }}
+                    className="w-full pl-8 pr-3.5 py-3.5 rounded-2xl border border-border-subtle bg-surface-subtle text-primary font-bold focus:outline-none focus:ring-2 focus:ring-gold"
+                  />
+                </div>
+                <span className="text-[10px] text-primary-muted mt-1 block">Your permanent unique handle checked against the Hunter Network.</span>
               </div>
 
               <div>
