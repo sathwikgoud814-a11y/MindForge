@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../shared/config/firebase';
 import confetti from 'canvas-confetti';
 import { ProgressionEngine } from '../shared/services/progressionEngine';
 import { HunterRatingEngine, HUNTER_RANKS } from '../shared/services/hunterRatingEngine';
@@ -344,54 +346,64 @@ export function SystemProvider({ children }) {
   useEffect(() => {
     let isMounted = true;
     async function syncActiveDuels() {
-      const email = currentUser?.email || '';
+      const email = (currentUser?.email || '').toLowerCase().trim();
       const uid = currentUser?.uid || '';
-      const name = character?.name || '';
+      const charName = (character?.name || '').toLowerCase().trim();
       if (!email && !uid) return;
 
       try {
-        const apiHost = window.location.hostname === 'localhost' ? '' : (import.meta.env.VITE_BACKEND_URL || '');
-        const res = await fetch(`${apiHost}/api/ai/my-duels?email=${encodeURIComponent(email)}&userId=${encodeURIComponent(uid)}&name=${encodeURIComponent(name)}`).catch(() => null);
-        if (res && res.ok) {
-          const json = await res.json();
-          if (json.success && Array.isArray(json.data) && isMounted) {
-            const activeFromDb = json.data.filter(d => d.status === 'active');
-            if (activeFromDb.length > 0) {
-              setActiveDuels(prev => {
-                const combinedMap = new Map();
-                (prev || []).forEach(d => combinedMap.set(d.id, d));
-                activeFromDb.forEach(d => {
-                  const oppName = (d.challengerName || '').toLowerCase() === (character?.name || '').toLowerCase() ? d.opponentName : d.challengerName;
-                  const formattedDuel = {
-                    id: d.id,
-                    opponent: {
-                      name: oppName || 'Hunter Partner',
-                      rank: 'Recruit Rank',
-                      avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${oppName || d.id}`,
-                      career: 'Software Engineer',
-                      level: 1,
-                    },
-                    duration: d.duration || '24 Hours',
-                    category: d.category || 'General Discipline',
-                    status: 'active',
-                    createdAt: d.createdAt || new Date().toISOString(),
-                    userScore: d.userScore || 0,
-                    opponentScore: d.opponentScore || 0,
-                    timeRemaining: d.duration || '24 Hours',
-                    userMissions: d.userMissions || 0,
-                    opponentMissions: d.opponentMissions || 0,
-                    userFocusHours: d.userFocusHours || 0,
-                    opponentFocusHours: d.opponentFocusHours || 0,
-                    currentLeader: d.currentLeader || character?.name || 'Vekta',
-                    liveFeed: d.liveFeed || [
-                      { id: 'lf_init', hunterName: 'System', text: `Duel Active! ${d.challengerName} vs ${d.opponentName}`, timestamp: d.createdAt || new Date().toISOString() }
-                    ]
-                  };
-                  combinedMap.set(d.id, formattedDuel);
-                });
-                return Array.from(combinedMap.values());
-              });
+        const snap = await getDocs(collection(db, 'duels'));
+        if (isMounted && snap) {
+          const activeFromDb = [];
+          snap.forEach(docSnap => {
+            const d = docSnap.data();
+            if (d.status === 'active') {
+              const chEmail = (d.challengerEmail || '').toLowerCase().trim();
+              const oppEmail = (d.opponentEmail || '').toLowerCase().trim();
+              const chName = (d.challengerName || '').toLowerCase().trim();
+              const oppName = (d.opponentName || '').toLowerCase().trim();
+
+              if (chEmail === email || oppEmail === email || d.challengerId === uid || d.opponentId === uid || (charName && (chName.includes(charName) || oppName.includes(charName)))) {
+                activeFromDb.push({ id: docSnap.id, ...d });
+              }
             }
+          });
+
+          if (activeFromDb.length > 0) {
+            setActiveDuels(prev => {
+              const combinedMap = new Map();
+              (prev || []).forEach(d => combinedMap.set(d.id, d));
+              activeFromDb.forEach(d => {
+                const oppName = (d.challengerName || '').toLowerCase() === charName ? d.opponentName : d.challengerName;
+                const formattedDuel = {
+                  id: d.id,
+                  opponent: {
+                    name: oppName || 'Hunter Partner',
+                    rank: 'Recruit Rank',
+                    avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${oppName || d.id}`,
+                    career: 'Software Engineer',
+                    level: 1,
+                  },
+                  duration: d.duration || '24 Hours',
+                  category: d.category || 'General Discipline',
+                  status: 'active',
+                  createdAt: d.createdAt || new Date().toISOString(),
+                  userScore: d.userScore || 0,
+                  opponentScore: d.opponentScore || 0,
+                  timeRemaining: d.duration || '24 Hours',
+                  userMissions: d.userMissions || 0,
+                  opponentMissions: d.opponentMissions || 0,
+                  userFocusHours: d.userFocusHours || 0,
+                  opponentFocusHours: d.opponentFocusHours || 0,
+                  currentLeader: d.currentLeader || character?.name || 'Vekta',
+                  liveFeed: d.liveFeed || [
+                    { id: 'lf_init', hunterName: 'System', text: `Duel Active! ${d.challengerName} vs ${d.opponentName}`, timestamp: d.createdAt || new Date().toISOString() }
+                  ]
+                };
+                combinedMap.set(d.id, formattedDuel);
+              });
+              return Array.from(combinedMap.values());
+            });
           }
         }
       } catch (err) {
@@ -401,11 +413,6 @@ export function SystemProvider({ children }) {
 
     if (currentUser?.email || currentUser?.uid) {
       syncActiveDuels();
-      const interval = setInterval(syncActiveDuels, 10000);
-      return () => {
-        isMounted = false;
-        clearInterval(interval);
-      };
     }
   }, [currentUser, character]);
 

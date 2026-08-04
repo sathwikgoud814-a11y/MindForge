@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../../shared/config/firebase';
 import { useSystem } from '../../context/SystemContext';
 
 export function HuntersView() {
@@ -26,130 +28,132 @@ export function HuntersView() {
   const [newHunterName, setNewHunterName] = useState('');
   const [newHunterCareer, setNewHunterCareer] = useState('Software Engineer');
 
-  // Fetch Real Network Hunters from Backend Express Firebase Admin Endpoint
+  // Fetch Real Network Hunters from Firestore `users/` collection directly
   useEffect(() => {
     let isMounted = true;
     async function fetchNetworkHunters() {
       try {
-        const res = await fetch('/api/ai/network-hunters');
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && Array.isArray(json.data) && isMounted) {
-            const myEmail = (currentUser?.email || '').toLowerCase();
-            const myName = (character?.name || '').toLowerCase();
+        const snap = await getDocs(collection(db, 'users'));
+        if (!isMounted) return;
+        const myEmail = (currentUser?.email || '').toLowerCase();
+        const myName = (character?.name || '').toLowerCase();
+        const myUid = currentUser?.uid || '';
 
-            const filteredHunters = json.data.filter(h => {
-              const hEmail = (h.email || '').toLowerCase();
-              const hName = (h.name || '').toLowerCase();
-              if (hEmail.includes('@system.elite')) return false;
-              if (myEmail && hEmail === myEmail) return false;
-              if (myName && hName === myName) return false;
-              return true;
+        const dedupMap = new Map();
+        snap.forEach(docSnap => {
+          const h = docSnap.data();
+          const hEmail = (h.email || '').toLowerCase();
+          const hName = (h.displayName || h.name || '').toLowerCase();
+          const hUid = h.uid || docSnap.id;
+          if (hEmail.includes('@system.elite')) return;
+          if (myUid && hUid === myUid) return;
+          if (myEmail && hEmail === myEmail) return;
+          if (myName && hName === myName) return;
+          const key = hName || hUid;
+          if (!dedupMap.has(key)) {
+            dedupMap.set(key, {
+              id: hUid,
+              name: h.displayName || h.name || 'Hunter',
+              email: h.email || '',
+              avatar: h.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${hUid}`,
+              rank: h.rank || 'Recruit Rank',
+              level: h.level || 1,
+              career: h.career || 'Adventurer',
+              xp: h.xp || 0,
             });
-
-            const dedupMap = new Map();
-            filteredHunters.forEach(h => {
-              const key = h.name.toLowerCase();
-              if (!dedupMap.has(key)) {
-                dedupMap.set(key, h);
-              }
-            });
-
-            setRegisteredUsers(Array.from(dedupMap.values()));
           }
-        }
+        });
+        if (isMounted) setRegisteredUsers(Array.from(dedupMap.values()));
       } catch (err) {
-        console.warn('[Network Hunters Fetch Warning]:', err.message);
+        // Quiet catch
       } finally {
         if (isMounted) setLoadingUsers(false);
       }
     }
 
     fetchNetworkHunters();
-    const interval = setInterval(fetchNetworkHunters, 10000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+    return () => { isMounted = false; };
   }, [currentUser, character]);
 
-  // Fetch Live Incoming & Active Duels for Logged-In User
+  // Fetch Live Incoming & Active Duels from Firestore `duels/` directly
   useEffect(() => {
     let isMounted = true;
     async function fetchMyDuels() {
       const email = (currentUser?.email || '').toLowerCase().trim();
       const uid = currentUser?.uid || '';
       const charName = (character?.name || '').toLowerCase().trim();
+      if (!email && !uid) return;
 
       try {
-        const res = await fetch(`/api/ai/my-duels?email=${encodeURIComponent(email)}&userId=${encodeURIComponent(uid)}&name=${encodeURIComponent(charName)}`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && Array.isArray(json.data) && isMounted) {
-            // Pending duels where recipient is current user
-            const pending = json.data.filter(d =>
-              d.status === 'pending' &&
-              ((d.opponentEmail || '').toLowerCase().trim() === email || (d.opponentId && d.opponentId === uid) || (d.opponentName || '').toLowerCase().trim().includes(charName))
-            );
-            setIncomingDuels(pending);
+        const snap = await getDocs(collection(db, 'duels'));
+        if (!isMounted) return;
 
-            // Active accepted duels involving current user
-            const activeServerDuels = json.data.filter(d =>
-              d.status === 'active' &&
-              ((d.opponentEmail || '').toLowerCase().trim() === email ||
-               (d.challengerEmail || '').toLowerCase().trim() === email ||
-               (d.opponentId && d.opponentId === uid) ||
-               (d.challengerId && d.challengerId === uid) ||
-               (d.opponentName || '').toLowerCase().trim().includes(charName) ||
-               (d.challengerName || '').toLowerCase().trim().includes(charName))
-            ).map(d => {
-              const isChallenger = (d.challengerEmail || '').toLowerCase().trim() === email || (d.challengerName || '').toLowerCase().trim().includes(charName);
-              return {
-                id: d.id,
-                opponent: {
-                  name: isChallenger ? (d.opponentName || 'Opponent') : (d.challengerName || 'Challenger'),
-                  rank: 'Recruit Rank',
-                  avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${isChallenger ? d.opponentName : d.challengerName}`,
-                  career: 'Software Engineer',
-                  level: 1,
-                },
-                duration: d.duration || '24 Hours',
-                category: d.category || 'General Discipline',
-                status: 'active',
-                userScore: isChallenger ? (d.userScore || 0) : (d.opponentScore || 0),
-                opponentScore: isChallenger ? (d.opponentScore || 0) : (d.userScore || 0),
-                timeRemaining: d.duration || '24 Hours',
-                userMissions: isChallenger ? (d.userMissions || 0) : (d.opponentMissions || 0),
-                opponentMissions: isChallenger ? (d.opponentMissions || 0) : (d.userMissions || 0),
-                currentLeader: d.currentLeader || character?.name || 'Vekta',
-                liveFeed: d.liveFeed || [],
-                createdAt: d.createdAt || new Date().toISOString(),
-              };
+        const pending = [];
+        const activeServerDuels = [];
+
+        snap.forEach(docSnap => {
+          const d = { id: docSnap.id, ...docSnap.data() };
+          const chEmail = (d.challengerEmail || '').toLowerCase().trim();
+          const oppEmail = (d.opponentEmail || '').toLowerCase().trim();
+          const chName = (d.challengerName || '').toLowerCase().trim();
+          const oppName = (d.opponentName || '').toLowerCase().trim();
+
+          const isInvolved = chEmail === email || oppEmail === email ||
+            d.challengerId === uid || d.opponentId === uid ||
+            (charName && (chName.includes(charName) || oppName.includes(charName)));
+
+          if (!isInvolved) return;
+
+          if (d.status === 'pending') {
+            const isOpponent = oppEmail === email || d.opponentId === uid || (charName && oppName.includes(charName));
+            if (isOpponent) pending.push(d);
+          } else if (d.status === 'active') {
+            const isChallenger = chEmail === email || d.challengerId === uid || (charName && chName.includes(charName));
+            activeServerDuels.push({
+              id: d.id,
+              opponent: {
+                name: isChallenger ? (d.opponentName || 'Opponent') : (d.challengerName || 'Challenger'),
+                rank: 'Recruit Rank',
+                avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${isChallenger ? d.opponentName : d.challengerName}`,
+                career: 'Software Engineer',
+                level: 1,
+              },
+              duration: d.duration || '24 Hours',
+              category: d.category || 'General Discipline',
+              status: 'active',
+              userScore: isChallenger ? (d.userScore || 0) : (d.opponentScore || 0),
+              opponentScore: isChallenger ? (d.opponentScore || 0) : (d.userScore || 0),
+              timeRemaining: d.duration || '24 Hours',
+              userMissions: isChallenger ? (d.userMissions || 0) : (d.opponentMissions || 0),
+              opponentMissions: isChallenger ? (d.opponentMissions || 0) : (d.userMissions || 0),
+              currentLeader: d.currentLeader || character?.name || 'Vekta',
+              liveFeed: d.liveFeed || [],
+              createdAt: d.createdAt || new Date().toISOString(),
             });
+          }
+        });
 
-            if (activeServerDuels.length > 0) {
-              setActiveDuels(prev => {
-                const map = new Map();
-                (prev || []).forEach(item => map.set(item.id, item));
-                activeServerDuels.forEach(item => map.set(item.id, { ...map.get(item.id), ...item }));
-                return Array.from(map.values());
-              });
-            }
+        if (isMounted) {
+          setIncomingDuels(pending);
+          if (activeServerDuels.length > 0) {
+            setActiveDuels(prev => {
+              const map = new Map();
+              (prev || []).forEach(item => map.set(item.id, item));
+              activeServerDuels.forEach(item => map.set(item.id, { ...map.get(item.id), ...item }));
+              return Array.from(map.values());
+            });
           }
         }
       } catch (err) {
-        console.warn('[My Duels Fetch Warning]:', err.message);
+        // Quiet catch
       }
     }
 
-    fetchMyDuels();
-    const interval = setInterval(fetchMyDuels, 4000); // Poll duels every 4s
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+    if (currentUser?.email || currentUser?.uid) {
+      fetchMyDuels();
+      const interval = setInterval(fetchMyDuels, 15000);
+      return () => { isMounted = false; clearInterval(interval); };
+    }
   }, [currentUser, character]);
 
   const handleRespondDuel = async (duelId, action) => {
