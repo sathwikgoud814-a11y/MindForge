@@ -522,11 +522,14 @@ export function SystemProvider({ children }) {
 
     // Async save to Cloud Firestore `characters/` collection
     saveCharacterProfile(userId, newChar).catch(err => console.warn('[Firestore Sync Warning]:', err));
-    fetch('/api/ai/sync-profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, character: newChar, onboardingData })
-    }).catch(err => console.warn('[Admin Firestore Sync Warning]:', err));
+    const apiHost = window.location.hostname === 'localhost' ? '' : (import.meta.env.VITE_BACKEND_URL || '');
+    if (apiHost || window.location.hostname === 'localhost') {
+      fetch(`${apiHost}/api/ai/sync-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, character: newChar, onboardingData })
+      }).catch(() => null);
+    }
 
 
     setCharacter(newChar);

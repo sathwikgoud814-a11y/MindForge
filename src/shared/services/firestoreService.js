@@ -31,20 +31,23 @@ export const syncUserDocument = async (user) => {
     console.warn('[Client Firestore Sync Warning]:', err.message);
     // Fallback to Express Firebase Admin API (bypasses rules)
     try {
-      await fetch('/api/ai/sync-profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.uid,
-          onboardingData: {
-            name: user.displayName || user.email?.split('@')[0] || 'Vekta',
-            email: user.email,
-            avatar: user.photoURL,
-          }
-        })
-      });
+      const apiHost = window.location.hostname === 'localhost' ? '' : (import.meta.env.VITE_BACKEND_URL || '');
+      if (apiHost || window.location.hostname === 'localhost') {
+        await fetch(`${apiHost}/api/ai/sync-profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.uid,
+            onboardingData: {
+              name: user.displayName || user.email?.split('@')[0] || 'Vekta',
+              email: user.email,
+              avatar: user.photoURL,
+            }
+          })
+        }).catch(() => null);
+      }
     } catch (adminErr) {
-      console.warn('[Admin Sync Fallback Warning]:', adminErr.message);
+      // Quiet catch
     }
   }
 };
