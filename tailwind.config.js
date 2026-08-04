@@ -8,17 +8,20 @@ export default {
   theme: {
     extend: {
       colors: {
-        "primary": "#111111",
-        "primary-muted": "#666666",
-        "gold": "#D4AF37",
-        "gold-light": "#F9F3E3",
-        "gold-hover": "#C59F27",
-        "surface": "#FFFFFF",
-        "background": "#FAFAFA",
-        "surface-subtle": "#F5F5F7",
-        "surface-card": "#FFFFFF",
-        "border-subtle": "rgba(0, 0, 0, 0.06)",
-        "border-gold": "rgba(212, 175, 55, 0.3)",
+        "primary": "var(--text-primary)",
+        "primary-muted": "var(--text-primary-muted)",
+        "gold": "var(--accent-gold)",
+        "gold-light": "var(--gold-light)",
+        "gold-hover": "var(--gold-hover)",
+        "surface": "var(--bg-surface)",
+        "background": "var(--bg-background)",
+        "surface-subtle": "var(--bg-surface-subtle)",
+        "surface-card": "var(--bg-surface-card)",
+        "border-subtle": "var(--border-subtle)",
+        "border-gold": "var(--border-gold)",
+        "status-success": "var(--status-success)",
+        "status-warning": "var(--status-warning)",
+        "status-error": "var(--status-error)",
       },
       borderRadius: {
         'apple': '1.5rem',
@@ -26,8 +29,8 @@ export default {
         'apple-sm': '1rem',
       },
       boxShadow: {
-        'apple-soft': '0 4px 24px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02)',
-        'apple-hover': '0 12px 32px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.03)',
+        'apple-soft': 'var(--shadow-soft)',
+        'apple-hover': 'var(--shadow-hover)',
         'gold-subtle': '0 4px 20px rgba(212, 175, 55, 0.2)',
       },
       fontFamily: {

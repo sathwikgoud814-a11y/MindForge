@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSystem } from '../../context/SystemContext';
 
 export function Header() {
-  const { character, activeTab, setActiveTab, resetAllSystemData } = useSystem();
+  const { character, activeTab, setActiveTab, resetAllSystemData, themeMode, setThemeMode } = useSystem();
   const [now, setNow] = useState(new Date());
 
   // Live real-time clock updating every 1000ms
@@ -87,6 +87,20 @@ export function Header() {
           <span className="material-symbols-outlined text-gold text-lg">stars</span>
           <span className="text-xs font-black text-primary">{character.dp.toLocaleString()} DP</span>
         </div>
+
+        {/* Theme Switcher Button */}
+        <button
+          onClick={() => {
+            const nextMode = themeMode === 'system' ? 'dark' : themeMode === 'dark' ? 'light' : 'system';
+            setThemeMode(nextMode);
+          }}
+          className="p-2.5 rounded-2xl bg-surface-subtle border border-border-subtle hover:border-gold/40 text-primary-muted hover:text-gold transition-colors flex items-center justify-center"
+          title={`Theme: ${themeMode === 'system' ? 'System Default' : themeMode === 'dark' ? 'Dark Mode' : 'Light Mode'} (Click to cycle)`}
+        >
+          <span className="material-symbols-outlined text-lg">
+            {themeMode === 'system' ? 'desktop_windows' : themeMode === 'dark' ? 'dark_mode' : 'light_mode'}
+          </span>
+        </button>
 
         {/* Reset System / Awakening Button */}
         <button

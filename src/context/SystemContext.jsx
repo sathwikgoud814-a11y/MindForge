@@ -127,6 +127,47 @@ export function SystemProvider({ children }) {
   const [showCreateSkillModal, setShowCreateSkillModal] = useState(false);
   const [showCareerModal, setShowCareerModal] = useState(false);
 
+  // Theme Management ('light' | 'dark' | 'system')
+  const [themeMode, setThemeMode] = useState(() => getSavedState('solo_theme_preference', 'system'));
+
+  useEffect(() => {
+    localStorage.setItem('solo_theme_preference', JSON.stringify(themeMode));
+
+    const applyTheme = () => {
+      const root = document.documentElement;
+      let isDark = false;
+
+      if (themeMode === 'dark') {
+        isDark = true;
+      } else if (themeMode === 'light') {
+        isDark = false;
+      } else {
+        isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+
+      if (isDark) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    };
+
+    applyTheme();
+
+    if (themeMode === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const listener = (e) => {
+        if (e.matches) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      };
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
+    }
+  }, [themeMode]);
+
   // 1. Firebase Auth State Listener
   useEffect(() => {
     const unsubscribe = onAuthChange((user) => {
@@ -830,6 +871,8 @@ export function SystemProvider({ children }) {
       activeDuels: activeDuels || [],
       activeTab,
       setActiveTab,
+      themeMode,
+      setThemeMode,
       completeMission,
       createMission,
       createReward,

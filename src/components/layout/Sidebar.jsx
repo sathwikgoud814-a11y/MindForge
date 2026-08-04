@@ -19,7 +19,7 @@ export function Sidebar() {
       {/* Website Brand Logo */}
       <div className="flex items-center gap-3 px-2 cursor-pointer" onClick={() => setActiveTab('commandCenter')}>
         <div className="w-10 h-10 rounded-2xl gold-gradient p-0.5 shadow-sm flex items-center justify-center flex-shrink-0">
-          <div className="w-full h-full bg-white rounded-xl flex items-center justify-center font-black text-lg text-primary">
+          <div className="w-full h-full bg-surface rounded-xl flex items-center justify-center font-black text-lg text-primary">
             S
           </div>
         </div>

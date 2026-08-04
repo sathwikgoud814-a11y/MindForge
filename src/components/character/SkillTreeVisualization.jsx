@@ -147,8 +147,8 @@ function SkillNodeCard({ skill, badgeColor }) {
           <span>XP Progress</span>
           <span>{xp} / {xpToNext}</span>
         </div>
-        <div className="w-full bg-white h-2 rounded-full overflow-hidden border border-border-subtle">
-          <div className="gold-gradient h-full rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }}></div>
+        <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border-subtle">
+          <div className="gold-gradient h-full rounded-full transition-all duration-500 progress-glow" style={{ width: `${progressPct}%` }}></div>
         </div>
       </div>
     </div>
