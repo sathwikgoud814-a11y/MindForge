@@ -200,6 +200,35 @@ router.post('/respond-duel', async (req, res) => {
   }
 });
 
+// POST Update Duel Score & Live Progress
+router.post('/update-duel-score', async (req, res) => {
+  try {
+    if (!adminDb) {
+      return res.status(500).json({ success: false, error: 'Firebase Admin not initialized' });
+    }
+
+    const { duelId, userScore, opponentScore, userMissions, opponentMissions, userFocusHours, opponentFocusHours, currentLeader, duelMissions, liveFeed } = req.body;
+
+    const updateObj = { updatedAt: new Date().toISOString() };
+    if (typeof userScore === 'number') updateObj.userScore = userScore;
+    if (typeof opponentScore === 'number') updateObj.opponentScore = opponentScore;
+    if (typeof userMissions === 'number') updateObj.userMissions = userMissions;
+    if (typeof opponentMissions === 'number') updateObj.opponentMissions = opponentMissions;
+    if (typeof userFocusHours === 'number') updateObj.userFocusHours = userFocusHours;
+    if (typeof opponentFocusHours === 'number') updateObj.opponentFocusHours = opponentFocusHours;
+    if (currentLeader) updateObj.currentLeader = currentLeader;
+    if (duelMissions) updateObj.duelMissions = duelMissions;
+    if (liveFeed) updateObj.liveFeed = liveFeed;
+
+    await adminDb.collection('duels').doc(duelId).update(updateObj);
+
+    res.json({ success: true, message: 'Duel scores updated successfully' });
+  } catch (err) {
+    console.error('[Update Duel Score Error]:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // POST Sync Profile to Firestore via Firebase Admin SDK
 router.post('/sync-profile', async (req, res) => {
   try {

@@ -101,23 +101,30 @@ export function CreateMissionModal() {
   };
 
   const handleDeployCustomMission = () => {
-    if (!aiAnalysis || !aiAnalysis.isGrowth) return;
+    if (!customTitle.trim()) return;
     if (isMaxReached) {
       alert('Maximum of 5 active directives reached! Please complete existing pending missions first.');
       return;
     }
 
+    const diff = aiAnalysis?.difficulty || 'A-Rank';
+    const dur = aiAnalysis?.estimatedDuration || '45 Mins';
+    const xp = aiAnalysis?.xpReward || 100;
+    const dp = aiAnalysis?.dpReward || 50;
+    const skills = aiAnalysis?.relatedSkills || [category];
+
     createMission({
       name: customTitle,
-      difficulty: aiAnalysis.difficulty,
-      estimatedDuration: aiAnalysis.estimatedDuration,
-      xpReward: aiAnalysis.xpReward,
-      dpReward: aiAnalysis.dpReward,
+      difficulty: diff,
+      estimatedDuration: dur,
+      xpReward: xp,
+      dpReward: dp,
       isMainMission: false,
-      relatedSkills: aiAnalysis.relatedSkills,
+      relatedSkills: skills,
     });
     setCustomTitle('');
     setAiAnalysis(null);
+    setShowCreateMissionModal(false);
   };
 
   const handleAddToRewardShop = () => {
@@ -311,10 +318,21 @@ export function CreateMissionModal() {
                   <button
                     type="button"
                     onClick={handleRunAiAnalysis}
-                    className="px-4 py-3 rounded-xl gold-gradient text-white font-extrabold flex items-center gap-1 shadow-sm"
+                    className="px-3.5 py-3 rounded-xl bg-surface-elevated border border-gold/40 text-gold font-extrabold flex items-center gap-1 shadow-xs hover:bg-gold-light"
                   >
                     <span className="material-symbols-outlined text-sm">psychology</span>
                     Analyze
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isMaxReached || !customTitle.trim()}
+                    onClick={handleDeployCustomMission}
+                    className={`px-4 py-3 rounded-xl text-white font-extrabold flex items-center gap-1 shadow-sm whitespace-nowrap ${
+                      isMaxReached || !customTitle.trim() ? 'bg-gray-400 cursor-not-allowed' : 'gold-gradient hover:scale-105'
+                    }`}
+                  >
+                    Deploy Directive →
                   </button>
                 </div>
               </div>

@@ -131,10 +131,7 @@ export function SystemProvider({ children }) {
 
   // Custom Calendar Events & Active View Persistence
   const [customEvents, setCustomEvents] = useState(() => {
-    return getSavedState('solo_custom_calendar_events', [
-      { id: 'evt_1', title: 'System Architecture Review', type: 'meeting', date: new Date().toISOString().slice(0, 10), time: '10:00 AM', duration: '60 Mins', priority: 'High', color: '#3B82F6' },
-      { id: 'evt_2', title: 'Cardio & HIIT Fitness Session', type: 'workout', date: new Date().toISOString().slice(0, 10), time: '05:00 PM', duration: '45 Mins', priority: 'Medium', color: '#22C55E' },
-    ]);
+    return getSavedState('solo_custom_calendar_events', []);
   });
 
   const [activeCalendarView, setActiveCalendarView] = useState(() => {

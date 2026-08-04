@@ -93,6 +93,49 @@ export function HuntersView() {
               ((d.opponentEmail || '').toLowerCase().trim() === email || (d.opponentId && d.opponentId === uid) || (d.opponentName || '').toLowerCase().trim().includes(charName))
             );
             setIncomingDuels(pending);
+
+            // Active accepted duels involving current user
+            const activeServerDuels = json.data.filter(d =>
+              d.status === 'active' &&
+              ((d.opponentEmail || '').toLowerCase().trim() === email ||
+               (d.challengerEmail || '').toLowerCase().trim() === email ||
+               (d.opponentId && d.opponentId === uid) ||
+               (d.challengerId && d.challengerId === uid) ||
+               (d.opponentName || '').toLowerCase().trim().includes(charName) ||
+               (d.challengerName || '').toLowerCase().trim().includes(charName))
+            ).map(d => {
+              const isChallenger = (d.challengerEmail || '').toLowerCase().trim() === email || (d.challengerName || '').toLowerCase().trim().includes(charName);
+              return {
+                id: d.id,
+                opponent: {
+                  name: isChallenger ? (d.opponentName || 'Opponent') : (d.challengerName || 'Challenger'),
+                  rank: 'Recruit Rank',
+                  avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${isChallenger ? d.opponentName : d.challengerName}`,
+                  career: 'Software Engineer',
+                  level: 1,
+                },
+                duration: d.duration || '24 Hours',
+                category: d.category || 'General Discipline',
+                status: 'active',
+                userScore: isChallenger ? (d.userScore || 0) : (d.opponentScore || 0),
+                opponentScore: isChallenger ? (d.opponentScore || 0) : (d.userScore || 0),
+                timeRemaining: d.duration || '24 Hours',
+                userMissions: isChallenger ? (d.userMissions || 0) : (d.opponentMissions || 0),
+                opponentMissions: isChallenger ? (d.opponentMissions || 0) : (d.userMissions || 0),
+                currentLeader: d.currentLeader || character?.name || 'Vekta',
+                liveFeed: d.liveFeed || [],
+                createdAt: d.createdAt || new Date().toISOString(),
+              };
+            });
+
+            if (activeServerDuels.length > 0) {
+              setActiveDuels(prev => {
+                const map = new Map();
+                (prev || []).forEach(item => map.set(item.id, item));
+                activeServerDuels.forEach(item => map.set(item.id, { ...map.get(item.id), ...item }));
+                return Array.from(map.values());
+              });
+            }
           }
         }
       } catch (err) {

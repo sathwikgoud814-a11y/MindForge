@@ -129,6 +129,20 @@ export function ActiveDuelView() {
     setViewingDuel(updatedDuel);
     setActiveDuels(prev => (prev || []).map(item => item.id === d.id ? updatedDuel : item));
 
+    // Persist score update to Firestore backend
+    fetch('/api/ai/update-duel-score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        duelId: d.id,
+        userScore: updatedUserScore,
+        userMissions: updatedMissionsCount,
+        currentLeader: newLeader,
+        duelMissions: updatedMissionsList,
+        liveFeed: [newFeedItem, ...(d.liveFeed || [])],
+      })
+    }).catch(err => console.warn('[Update Duel Score Error]:', err));
+
     // Also complete matching main system mission if available
     const mainM = (missions || []).find(m => m.name.toLowerCase().includes(missionName.toLowerCase()));
     if (mainM && !mainM.completed) {
@@ -231,31 +245,6 @@ export function ActiveDuelView() {
         >
           ← Back to Hunters Network
         </button>
-      </div>
-
-      {/* Action Bar: Log Task & Progress during Duel */}
-      <div className="apple-card p-6 border-2 border-gold/40 bg-gold-light/40 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
-        <div>
-          <h3 className="font-extrabold text-base text-primary">Log Progress & Earn Duel Points</h3>
-          <p className="text-xs text-primary-muted font-medium">Complete category directives or focus blocks to surpass your opponent.</p>
-        </div>
-
-        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-          <button
-            onClick={handleLogFocusHour}
-            className="px-4 py-2.5 rounded-xl bg-surface-elevated border border-border-subtle font-extrabold text-xs text-primary hover:border-gold/40 transition-colors shadow-2xs flex items-center gap-1.5"
-          >
-            <span className="material-symbols-outlined text-gold text-base">timer</span>
-            +1h Focus (+50 PTS)
-          </button>
-          <button
-            onClick={() => setShowLogModal(true)}
-            className="px-5 py-2.5 rounded-xl gold-gradient text-white font-extrabold text-xs shadow-md hover:scale-105 transition-transform flex items-center gap-1.5"
-          >
-            <span className="material-symbols-outlined text-base">check_circle</span>
-            + Log Custom Task (+100 PTS)
-          </button>
-        </div>
       </div>
 
       {/* Side-by-Side Score Card */}
