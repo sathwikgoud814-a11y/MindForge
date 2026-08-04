@@ -310,54 +310,9 @@ router.post('/delete-account', async (req, res) => {
 // POST Cleanup all demo_* documents & merge duplicate email entries in Firestore
 router.post('/cleanup-demo-data', async (req, res) => {
   try {
-    if (!adminDb) {
-      return res.status(500).json({ success: false, error: 'Firebase Admin not initialized' });
-    }
-
-    const collections = ['users', 'characters', 'careerTrees', 'duels', 'connections', 'friendRequests'];
-    let deletedCount = 0;
-
-    // 1. Delete all demo documents
-    for (const col of collections) {
-      const snap = await adminDb.collection(col).get();
-      for (const doc of snap.docs) {
-        const id = doc.id.toLowerCase();
-        const data = doc.data();
-        const strData = JSON.stringify(data).toLowerCase();
-
-        if (id.startsWith('demo') || strData.includes('demo_user')) {
-          await adminDb.collection(col).doc(doc.id).delete().catch(() => {});
-          deletedCount++;
-        }
-      }
-    }
-
-    // 2. Strict Deduplication by Email across users/ and characters/
-    const usersSnap = await adminDb.collection('users').get();
-    const emailToDocIdMap = new Map();
-
-    for (const doc of usersSnap.docs) {
-      const data = doc.data();
-      const rawEmail = data.email || '';
-      const email = rawEmail.toLowerCase().trim();
-
-      if (!email) continue;
-
-      if (emailToDocIdMap.has(email)) {
-        // Redundant duplicate document with same email -> DELETE
-        const dupId = doc.id;
-        await adminDb.collection('users').doc(dupId).delete().catch(() => {});
-        await adminDb.collection('characters').doc(dupId).delete().catch(() => {});
-        await adminDb.collection('careerTrees').doc(`tree_${dupId}`).delete().catch(() => {});
-        deletedCount++;
-        console.log(`[Deduplication Purge] Deleted duplicate Firestore user document ${dupId} for email ${email}`);
-      } else {
-        emailToDocIdMap.set(email, doc.id);
-      }
-    }
-
-    console.log(`[Firestore Demo Cleanup] Deleted ${deletedCount} demo/duplicate documents`);
-    res.json({ success: true, deletedCount });
+    const { purgeDemoAndDuplicates } = await import('../utils/dbCleaner.js');
+    const result = await purgeDemoAndDuplicates();
+    res.json({ success: true, ...result });
   } catch (err) {
     console.error('[Demo Cleanup Error]:', err.message);
     res.status(500).json({ success: false, error: err.message });
