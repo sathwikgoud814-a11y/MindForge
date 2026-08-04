@@ -84,7 +84,9 @@ export function CommandCenter() {
               </span>
             </div>
 
-            <h1 className="text-3xl font-black text-primary tracking-tight">Good Morning, {character.name || 'Vekta'}.</h1>
+            <h1 className="text-3xl font-black text-primary tracking-tight">
+              {new Date().getHours() < 12 ? 'Good Morning' : new Date().getHours() < 17 ? 'Good Afternoon' : new Date().getHours() < 22 ? 'Good Evening' : 'Welcome Back'}, {character.name || 'Vekta'}.
+            </h1>
 
             {/* XP & Rank Mastery Progress Bars */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 max-w-xl">
