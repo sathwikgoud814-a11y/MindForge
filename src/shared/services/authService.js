@@ -16,6 +16,9 @@ const formatAuthError = (err) => {
   const code = err.code || '';
   const message = err.message || '';
 
+  if (code === 'auth/api-key-not-valid' || message.includes('api-key-not-valid')) {
+    return 'Invalid Firebase Web API Key in .env. Please open Firebase Console (Project Settings > General > Your Apps) and paste your Web API Key into VITE_FIREBASE_API_KEY in .env.';
+  }
   if (code === 'auth/email-already-in-use' || message.includes('email-already-in-use')) {
     return 'This email address is already registered in the System. Please switch to the "Sign In" tab above or continue with Google/GitHub.';
   }
