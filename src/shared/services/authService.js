@@ -11,19 +11,31 @@ import { auth, googleProvider, githubProvider } from '../config/firebase';
 import { syncUserDocument } from './firestoreService';
 
 const formatAuthError = (err) => {
-  if (err?.code === 'auth/configuration-not-found' || err?.message?.includes('configuration-not-found')) {
-    return 'Firebase Authentication is not enabled in your Firebase Console yet. Please visit Firebase Console > Build > Authentication and click "Get Started".';
+  if (!err) return 'An unexpected authentication error occurred.';
+
+  const code = err.code || '';
+  const message = err.message || '';
+
+  if (code === 'auth/email-already-in-use' || message.includes('email-already-in-use')) {
+    return 'This email address is already registered in the System. Please switch to the "Sign In" tab above or continue with Google/GitHub.';
   }
-  if (err?.code === 'auth/api-key-not-valid' || err?.message?.includes('api-key-not-valid')) {
-    return 'Invalid Firebase API Key in .env. Please update VITE_FIREBASE_API_KEY with your Web App API key from Firebase Console > Project Settings.';
+  if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || message.includes('invalid-credential') || message.includes('wrong-password')) {
+    return 'Invalid email or password. Please verify your password or select "Create New Account" if you are a new player.';
   }
-  if (err?.code === 'auth/invalid-credential' || err?.code === 'auth/user-not-found' || err?.code === 'auth/wrong-password') {
-    return 'Invalid email or password. Creating a new account automatically...';
+  if (code === 'auth/user-not-found' || message.includes('user-not-found')) {
+    return 'No registered Hunter account found with this email address. Please switch to the "Create New Account" tab.';
   }
-  if (err?.code === 'auth/popup-closed-by-user') {
-    return 'Sign in popup was closed before completion. Please try again.';
+  if (code === 'auth/weak-password' || message.includes('weak-password')) {
+    return 'Password is too weak. Please use at least 6 characters.';
   }
-  return err.message || 'Authentication failed.';
+  if (code === 'auth/popup-closed-by-user' || message.includes('popup-closed-by-user')) {
+    return 'Authentication popup was closed before completion. Please try again.';
+  }
+  if (code === 'auth/configuration-not-found' || message.includes('configuration-not-found')) {
+    return 'Firebase Authentication is not enabled in Firebase Console. Please visit Console > Build > Authentication.';
+  }
+
+  return message || 'Authentication failed. Please verify your credentials.';
 };
 
 export const signInWithGoogle = async () => {

@@ -154,29 +154,19 @@ export function OnboardingFlow() {
       setAuthError('Please enter a valid email address.');
       return;
     }
+    if (!authPassword || authPassword.length < 6) {
+      setAuthError('Password must be at least 6 characters long.');
+      return;
+    }
 
     try {
       setAuthError('');
       let user;
 
       if (authMode === 'signIn') {
-        try {
-          user = await signInWithEmail(authEmail, authPassword || 'MindForgePass123!');
-        } catch (signInErr) {
-          if (signInErr.message?.includes('invalid-credential') || signInErr.message?.includes('user-not-found')) {
-            throw new Error('No account found with this email, or password is incorrect. Please verify your credentials or click "Create New Account".');
-          }
-          throw signInErr;
-        }
+        user = await signInWithEmail(authEmail, authPassword);
       } else {
-        try {
-          user = await signUpWithEmail(authEmail, authPassword || 'MindForgePass123!');
-        } catch (signUpErr) {
-          if (signUpErr.message?.includes('email-already-in-use') || signUpErr?.code === 'auth/email-already-in-use') {
-            throw new Error('This email address is already registered in the System. Please switch to the "Sign In" tab above to log into your account.');
-          }
-          throw signUpErr;
-        }
+        user = await signUpWithEmail(authEmail, authPassword);
       }
 
       if (user) {
@@ -201,11 +191,7 @@ export function OnboardingFlow() {
       }
     } catch (err) {
       console.error('[Email Auth Error]:', err);
-      if (err.message?.includes('email-already-in-use') || err?.code === 'auth/email-already-in-use') {
-        setAuthError('This email address is already registered in the System. Please switch to the "Sign In" tab above to log into your account.');
-      } else {
-        setAuthError(err.message || 'Authentication error. Please check your credentials.');
-      }
+      setAuthError(err.message || 'Authentication error. Please check your credentials.');
     }
   };
 
