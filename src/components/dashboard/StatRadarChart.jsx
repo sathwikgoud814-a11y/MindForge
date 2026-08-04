@@ -36,8 +36,8 @@ export function StatRadarChart() {
         </div>
       </div>
 
-      <div className="w-full h-64">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="w-full h-64 min-h-[256px]">
+        <ResponsiveContainer width="100%" height={240} minHeight={240}>
           <RadarChart cx="50%" cy="50%" outerRadius="75%" data={data}>
             <PolarGrid stroke={isDark ? '#2A2F3A' : '#e2e2e2'} />
             <PolarAngleAxis dataKey="stat" tick={{ fill: isDark ? '#F5F7FA' : '#111111', fontSize: 12, fontWeight: 700 }} />

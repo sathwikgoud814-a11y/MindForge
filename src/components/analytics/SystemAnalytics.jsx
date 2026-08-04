@@ -60,8 +60,8 @@ export function SystemAnalytics() {
             <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">+24% vs Last Week</span>
           </div>
 
-          <div className="w-full h-64">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full h-64 min-h-[256px]">
+            <ResponsiveContainer width="100%" height={240} minHeight={240}>
               <AreaChart data={xpData}>
                 <defs>
                   <linearGradient id="xpGrad" x1="0" y1="0" x2="0" y2="1">
@@ -69,10 +69,10 @@ export function SystemAnalytics() {
                     <stop offset="95%" stopColor="#D4AF37" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#eeeeee" />
-                <XAxis dataKey="day" tick={{ fontSize: 12, fill: '#444748' }} />
-                <YAxis tick={{ fontSize: 12, fill: '#444748' }} />
-                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid rgba(0,0,0,0.1)' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                <XAxis dataKey="day" tick={{ fontSize: 12, fill: '#94A3B8' }} />
+                <YAxis tick={{ fontSize: 12, fill: '#94A3B8' }} />
+                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', backgroundColor: '#111827', color: '#F8FAFC' }} />
                 <Area type="monotone" dataKey="xp" stroke="#D4AF37" strokeWidth={3} fillOpacity={1} fill="url(#xpGrad)" />
               </AreaChart>
             </ResponsiveContainer>
@@ -92,14 +92,14 @@ export function SystemAnalytics() {
             <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">Avg 4.6 hrs/day</span>
           </div>
 
-          <div className="w-full h-64">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full h-64 min-h-[256px]">
+            <ResponsiveContainer width="100%" height={240} minHeight={240}>
               <BarChart data={focusData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#eeeeee" />
-                <XAxis dataKey="day" tick={{ fontSize: 12, fill: '#444748' }} />
-                <YAxis tick={{ fontSize: 12, fill: '#444748' }} />
-                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid rgba(0,0,0,0.1)' }} />
-                <Bar dataKey="hours" fill="#111111" radius={[8, 8, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                <XAxis dataKey="day" tick={{ fontSize: 12, fill: '#94A3B8' }} />
+                <YAxis tick={{ fontSize: 12, fill: '#94A3B8' }} />
+                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', backgroundColor: '#111827', color: '#F8FAFC' }} />
+                <Bar dataKey="hours" fill="#D4AF37" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

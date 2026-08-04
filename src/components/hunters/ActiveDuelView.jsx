@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSystem } from '../../context/SystemContext';
+import { formatLiveFeedTime } from '../../shared/utils/timeUtils';
 
 export function getDuelCategoryPredefinedMissions(category = 'All Missions') {
   switch (category) {
@@ -110,11 +111,13 @@ export function ActiveDuelView() {
       m.id === missionId ? { ...m, completed: true } : m
     );
 
+    const nowIso = new Date().toISOString();
     const newFeedItem = {
       id: 'lf_' + Date.now(),
       hunterName: character.name,
       text: `Executed ${d.category} duel mission "${missionName}" (+100 PTS)`,
-      time: 'Just now',
+      timestamp: nowIso,
+      time: formatLiveFeedTime(nowIso),
     };
 
     const updatedDuel = {
@@ -395,7 +398,9 @@ export function ActiveDuelView() {
                   <p className="text-[11px] text-primary-muted">{item.text}</p>
                 </div>
               </div>
-              <span className="text-[10px] text-primary-muted font-bold">{item.time}</span>
+              <span className="text-[10px] text-primary-muted font-bold font-mono">
+                {formatLiveFeedTime(item.timestamp || item.createdAt || item.time)}
+              </span>
             </div>
           ))}
         </div>

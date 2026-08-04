@@ -306,7 +306,7 @@ export function SystemProvider({ children }) {
                     opponentFocusHours: d.opponentFocusHours || 0,
                     currentLeader: d.currentLeader || character?.name || 'Vekta',
                     liveFeed: d.liveFeed || [
-                      { id: 'lf_init', hunterName: 'System', text: `Duel Active! ${d.challengerName} vs ${d.opponentName}`, time: 'Just now' }
+                      { id: 'lf_init', hunterName: 'System', text: `Duel Active! ${d.challengerName} vs ${d.opponentName}`, timestamp: d.createdAt || new Date().toISOString() }
                     ]
                   };
                   combinedMap.set(d.id, formattedDuel);
