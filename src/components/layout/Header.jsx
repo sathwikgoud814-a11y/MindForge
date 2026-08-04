@@ -121,7 +121,7 @@ export function Header() {
           className="w-10 h-10 rounded-2xl gold-gradient p-0.5 cursor-pointer hover:scale-105 transition-transform shadow-sm"
           title="Open Profile"
         >
-          <div className="w-full h-full bg-white rounded-xl flex items-center justify-center font-black text-primary text-base">
+          <div className="w-full h-full bg-surface rounded-xl flex items-center justify-center font-black text-primary text-base">
             S
           </div>
         </div>

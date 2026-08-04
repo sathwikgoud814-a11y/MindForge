@@ -34,7 +34,7 @@ export function CharacterView() {
       <section className="apple-card p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
         <div className="flex items-center gap-6 w-full md:w-auto">
           <div className="w-24 h-24 rounded-3xl gold-gradient p-1 flex-shrink-0 shadow-md">
-            <div className="w-full h-full bg-white rounded-2xl flex items-center justify-center font-black text-3xl text-primary">
+            <div className="w-full h-full bg-surface rounded-2xl flex items-center justify-center font-black text-3xl text-primary">
               {safeChar.level ?? 1}
             </div>
           </div>
@@ -155,7 +155,7 @@ export function CharacterView() {
                     <span>XP</span>
                     <span>{xp} / {xpToNext}</span>
                   </div>
-                  <div className="w-full bg-white h-2 rounded-full overflow-hidden border border-border-subtle">
+                  <div className="w-full bg-surface h-2 rounded-full overflow-hidden border border-border-subtle">
                     <div className="gold-gradient h-full rounded-full transition-all duration-500 progress-glow" style={{ width: `${progressPct}%` }}></div>
                   </div>
                 </div>
