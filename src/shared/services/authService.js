@@ -16,8 +16,17 @@ const formatAuthError = (err) => {
   const code = err.code || '';
   const message = err.message || '';
 
+  if (code === 'auth/operation-not-allowed' || message.includes('operation-not-allowed')) {
+    return 'OAuth Provider (Google/GitHub) is disabled in Firebase. Please enable it in Firebase Console > Build > Authentication > Sign-in method.';
+  }
+  if (code === 'auth/unauthorized-domain' || message.includes('unauthorized-domain')) {
+    return 'Domain is not authorized for Firebase Auth. Please add localhost in Firebase Console > Authentication > Settings > Authorized domains.';
+  }
+  if (code === 'auth/popup-blocked' || message.includes('popup-blocked')) {
+    return 'Sign-in popup was blocked by your browser. Please allow popups for localhost and try again.';
+  }
   if (code === 'auth/api-key-not-valid' || message.includes('api-key-not-valid')) {
-    return 'Invalid Firebase Web API Key in .env. Please open Firebase Console (Project Settings > General > Your Apps) and paste your Web API Key into VITE_FIREBASE_API_KEY in .env.';
+    return 'Invalid Firebase Web API Key in .env. Please check Firebase Console > Project Settings > General > Your Apps > Web App API key.';
   }
   if (code === 'auth/email-already-in-use' || message.includes('email-already-in-use')) {
     return 'This email address is already registered in the System. Please switch to the "Sign In" tab above or continue with Google/GitHub.';
@@ -38,7 +47,7 @@ const formatAuthError = (err) => {
     return 'Firebase Authentication is not enabled in Firebase Console. Please visit Console > Build > Authentication.';
   }
 
-  return message || 'Authentication failed. Please verify your credentials.';
+  return `${code ? `[${code}]: ` : ''}${message || 'Authentication failed. Please verify your credentials.'}`;
 };
 
 export const signInWithGoogle = async () => {

@@ -123,7 +123,7 @@ export function OnboardingFlow() {
       }
     } catch (e) {
       console.error('[Google Auth Error]:', e);
-      setAuthError('Google sign in failed or popup was closed. Please authenticate to proceed.');
+      setAuthError(e.message || 'Google sign in failed. Please try again.');
     }
   };
 
@@ -143,7 +143,7 @@ export function OnboardingFlow() {
       }
     } catch (e) {
       console.error('[GitHub Auth Error]:', e);
-      setAuthError('GitHub sign in failed or popup was closed. Please authenticate to proceed.');
+      setAuthError(e.message || 'GitHub sign in failed. Please try again.');
     }
   };
 
