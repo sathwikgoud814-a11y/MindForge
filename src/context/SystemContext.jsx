@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { ProgressionEngine } from '../shared/services/progressionEngine';
+import { HunterRatingEngine, HUNTER_RANKS } from '../shared/services/hunterRatingEngine';
 import { onAuthChange } from '../shared/services/authService';
 import { getDynamicSkillTree } from '../shared/services/careerEngine';
 import {
@@ -119,6 +120,7 @@ export function SystemProvider({ children }) {
   const [rewardRedemptionOverlay, setRewardRedemptionOverlay] = useState({ open: false, reward: null });
   const [mysteryBoxOverlay, setMysteryBoxOverlay] = useState({ open: false, box: null, drop: null });
   const [duelResultOverlay, setDuelResultOverlay] = useState({ open: false, duel: null });
+  const [rankPromotionOverlay, setRankPromotionOverlay] = useState({ open: false, oldRank: null, newRank: null, hunterRating: 0, reason: '' });
 
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [showCreateMissionModal, setShowCreateMissionModal] = useState(false);
@@ -126,6 +128,40 @@ export function SystemProvider({ children }) {
   const [editingReward, setEditingReward] = useState(null);
   const [showCreateSkillModal, setShowCreateSkillModal] = useState(false);
   const [showCareerModal, setShowCareerModal] = useState(false);
+
+  // Dynamic Hunter Rating Calculation & Promotion Trigger
+  const hunterRating = HunterRatingEngine.calculateRating({ character, attributes, customSkills, missions, activeDuels });
+  const evaluatedRank = HunterRatingEngine.getRankForRating(hunterRating);
+
+  useEffect(() => {
+    if (!character || !evaluatedRank) return;
+
+    const currentRankLabel = character.rank || 'Recruit (Unawakened)';
+    if (evaluatedRank.label !== currentRankLabel && evaluatedRank.minRating > 0) {
+      const oldRankObj = HUNTER_RANKS.find(r => r.label === currentRankLabel || r.id === currentRankLabel) || HUNTER_RANKS[0];
+      const newRankObj = evaluatedRank;
+
+      setRankPromotionOverlay({
+        open: true,
+        oldRank: oldRankObj,
+        newRank: newRankObj,
+        hunterRating,
+        reason: `Evaluated Hunter Rating crossed ${newRankObj.minRating} PTS threshold through continuous directive execution and skill mastery.`,
+      });
+
+      confetti({ particleCount: 150, spread: 80, origin: { y: 0.4 } });
+
+      const updatedChar = {
+        ...character,
+        rank: newRankObj.label,
+        hunterRating,
+      };
+      setCharacter(updatedChar);
+
+      const userId = currentUser?.uid || character.id || 'user_local';
+      saveCharacterProfile(userId, updatedChar).catch(err => console.warn(err));
+    }
+  }, [hunterRating, character?.rank]);
 
   // Theme Management ('light' | 'dark' | 'system')
   const [themeMode, setThemeMode] = useState(() => getSavedState('solo_theme_preference', 'dark'));
@@ -879,6 +915,10 @@ export function SystemProvider({ children }) {
       setActiveTab,
       themeMode,
       setThemeMode,
+      hunterRating,
+      evaluatedRank,
+      rankPromotionOverlay,
+      setRankPromotionOverlay,
       completeMission,
       createMission,
       createReward,

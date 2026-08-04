@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSystem } from '../../context/SystemContext';
 
 export function Header() {
-  const { character, activeTab, setActiveTab, resetAllSystemData, themeMode, setThemeMode } = useSystem();
+  const { character, activeTab, setActiveTab, resetAllSystemData, themeMode, setThemeMode, hunterRating } = useSystem();
   const [now, setNow] = useState(new Date());
 
   // Live real-time clock updating every 1000ms
@@ -45,9 +45,12 @@ export function Header() {
       <div>
         <div className="flex items-center gap-2 mb-1">
           <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full gold-gradient text-white uppercase tracking-wider">
-            {character.rank}
+            {character.rank || 'Recruit (Unawakened)'}
           </span>
-          <span className="text-xs text-primary-muted font-medium">Level {character.level}</span>
+          <span className="text-xs text-primary-muted font-bold">Lvl {character.level}</span>
+          <span className="text-xs font-black text-gold px-2 py-0.5 rounded bg-surface-subtle border border-border-subtle">
+            ⚡ {hunterRating || 0} HR Rating
+          </span>
           <span className="text-xs font-extrabold text-gold px-2 py-0.5 rounded bg-surface-subtle border border-border-subtle">
             🔥 {character.streakDays || 1} Day Streak
           </span>

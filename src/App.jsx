@@ -24,6 +24,7 @@ import { MissionCompletionModal } from './components/common/MissionCompletionMod
 import { RewardRedemptionModal } from './components/common/RewardRedemptionModal';
 import { MysteryBoxModal } from './components/shop/MysteryBoxModal';
 import { LevelUpModal } from './components/common/LevelUpModal';
+import { RankPromotionModal } from './components/common/RankPromotionModal';
 import { CreateMissionModal } from './components/missions/CreateMissionModal';
 import { AddRewardModal } from './components/shop/AddRewardModal';
 import { EditRewardModal } from './components/shop/EditRewardModal';
@@ -60,6 +61,7 @@ function AppContent() {
         <RewardRedemptionModal />
         <MysteryBoxModal />
         <LevelUpModal />
+        <RankPromotionModal />
         <CreateMissionModal />
         <AddRewardModal />
         <EditRewardModal />
