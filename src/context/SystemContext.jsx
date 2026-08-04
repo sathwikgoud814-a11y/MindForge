@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '../shared/config/firebase';
 import confetti from 'canvas-confetti';
 import { ProgressionEngine } from '../shared/services/progressionEngine';
@@ -946,23 +946,20 @@ export function SystemProvider({ children }) {
     logTimelineEvent(userId, 'DUEL_WON', `Started duel challenge against ${opponent.name}`).catch(err => console.warn(err));
 
     // Send Duel Challenge directly to Firestore `duels/` collection
-    const { addDoc } = await import('firebase/firestore').catch(() => ({}));
-    if (addDoc) {
-      addDoc(collection(db, 'duels'), {
-        challengerId: currentUser?.uid || character.id || 'user_local',
-        challengerName: character.name,
-        challengerEmail: currentUser?.email || '',
-        opponentId: opponent.id || '',
-        opponentName: opponent.name,
-        opponentEmail: opponent.email || '',
-        duration,
-        category,
-        status: 'pending',
-        userScore: 0,
-        opponentScore: 0,
-        createdAt: new Date().toISOString(),
-      }).catch(err => console.warn('[Send Duel Warning]:', err));
-    }
+    addDoc(collection(db, 'duels'), {
+      challengerId: currentUser?.uid || character.id || 'user_local',
+      challengerName: character.name,
+      challengerEmail: currentUser?.email || '',
+      opponentId: opponent.id || '',
+      opponentName: opponent.name,
+      opponentEmail: opponent.email || '',
+      duration,
+      category,
+      status: 'pending',
+      userScore: 0,
+      opponentScore: 0,
+      createdAt: new Date().toISOString(),
+    }).catch(err => console.warn('[Send Duel Warning]:', err));
 
     confetti({
       particleCount: 100,

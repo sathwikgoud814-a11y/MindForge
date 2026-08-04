@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, addDoc } from 'firebase/firestore';
 import { db } from '../../shared/config/firebase';
 import { useSystem } from '../../context/SystemContext';
 
@@ -158,7 +158,6 @@ export function HuntersView() {
 
   const handleRespondDuel = async (duelId, action) => {
     try {
-      const { doc, updateDoc } = await import('firebase/firestore');
       const duelRef = doc(db, 'duels', duelId);
 
       if (action === 'accept') {
@@ -266,8 +265,7 @@ export function HuntersView() {
     addHunter(target);
 
     try {
-      const { collection: col, addDoc } = await import('firebase/firestore');
-      await addDoc(col(db, 'connections'), {
+      await addDoc(collection(db, 'connections'), {
         senderId: currentUser?.uid || character?.id || 'user_local',
         senderName: character?.name || 'Vekta',
         senderEmail: currentUser?.email || character?.email || '',
