@@ -917,7 +917,7 @@ export function SystemProvider({ children }) {
     setHunters(prev => [...(prev || []), newHunter]);
   };
 
-  const startDuel = (opponent, duration, category) => {
+  const startDuel = async (opponent, duration, category) => {
     const newDuel = {
       id: 'd_' + Date.now(),
       opponent,
@@ -945,12 +945,24 @@ export function SystemProvider({ children }) {
     const userId = currentUser?.uid || character.id || 'user_local';
     logTimelineEvent(userId, 'DUEL_WON', `Started duel challenge against ${opponent.name}`).catch(err => console.warn(err));
 
-    // Send Duel Challenge to target player via Cloud Firestore Admin API
-    fetch('/api/ai/send-duel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ challenger: currentUser, character, opponent, duration, category })
-    }).catch(err => console.warn('[Send Duel Warning]:', err));
+    // Send Duel Challenge directly to Firestore `duels/` collection
+    const { addDoc } = await import('firebase/firestore').catch(() => ({}));
+    if (addDoc) {
+      addDoc(collection(db, 'duels'), {
+        challengerId: currentUser?.uid || character.id || 'user_local',
+        challengerName: character.name,
+        challengerEmail: currentUser?.email || '',
+        opponentId: opponent.id || '',
+        opponentName: opponent.name,
+        opponentEmail: opponent.email || '',
+        duration,
+        category,
+        status: 'pending',
+        userScore: 0,
+        opponentScore: 0,
+        createdAt: new Date().toISOString(),
+      }).catch(err => console.warn('[Send Duel Warning]:', err));
+    }
 
     confetti({
       particleCount: 100,

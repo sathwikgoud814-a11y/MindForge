@@ -158,16 +158,13 @@ export function HuntersView() {
 
   const handleRespondDuel = async (duelId, action) => {
     try {
-      const res = await fetch('/api/ai/respond-duel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ duelId, action })
-      });
-      setIncomingDuels(prev => prev.filter(d => d.id !== duelId));
+      const { doc, updateDoc } = await import('firebase/firestore');
+      const duelRef = doc(db, 'duels', duelId);
 
       if (action === 'accept') {
-        const json = await res.json();
-        // Immediately add duel to activeDuels state and set viewing duel
+        await updateDoc(duelRef, { status: 'active', acceptedAt: new Date().toISOString() });
+
+        // Immediately add duel to activeDuels state and navigate
         const d = incomingDuels.find(item => item.id === duelId);
         if (d) {
           const formatted = {
@@ -197,7 +194,11 @@ export function HuntersView() {
           setActiveDuels(prev => [formatted, ...(prev || [])]);
           setViewingDuel(formatted);
         }
+      } else if (action === 'decline') {
+        await updateDoc(duelRef, { status: 'declined', declinedAt: new Date().toISOString() });
       }
+
+      setIncomingDuels(prev => prev.filter(d => d.id !== duelId));
     } catch (e) {
       console.warn('[Respond Duel Error]:', e);
     }
@@ -265,16 +266,19 @@ export function HuntersView() {
     addHunter(target);
 
     try {
-      await fetch('/api/ai/send-connection', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sender: currentUser || { uid: character?.id || 'user_local', displayName: character?.name || 'Vekta', email: character?.email || '' },
-          targetHunter: target,
-        })
+      const { collection: col, addDoc } = await import('firebase/firestore');
+      await addDoc(col(db, 'connections'), {
+        senderId: currentUser?.uid || character?.id || 'user_local',
+        senderName: character?.name || 'Vekta',
+        senderEmail: currentUser?.email || character?.email || '',
+        targetId: target.id,
+        targetName: target.name,
+        targetEmail: target.email,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
       });
     } catch (err) {
-      console.warn('[Send Connection Error]:', err);
+      // Quiet catch — local hunter added to state regardless
     }
 
     setNewHunterName('');
