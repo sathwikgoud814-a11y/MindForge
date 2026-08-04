@@ -29,13 +29,26 @@ async function directDatabasePurge() {
 
   let deletedCount = 0;
 
+  // 1. Get set of all currently valid User UIDs and Emails
+  const usersSnap = await db.collection('users').get();
+  const validUserIds = new Set();
+  const validUserEmails = new Set();
+
+  usersSnap.docs.forEach(doc => {
+    validUserIds.add(doc.id);
+    const data = doc.data();
+    if (data.email) validUserEmails.add(data.email.toLowerCase().trim());
+  });
+
+  console.log(`Found ${validUserIds.size} valid registered users in Firestore.`);
+
   const collections = [
     'users', 'characters', 'careerTrees', 'duels', 'connections',
     'friendRequests', 'notifications', 'missions', 'skills',
     'rewardShop', 'rewardHistory', 'transactions', 'timeline'
   ];
 
-  // 1. Delete ALL demo documents across all collections
+  // 2. Delete demo docs & orphaned records for non-existent users
   for (const colName of collections) {
     try {
       const snap = await db.collection(colName).get();
@@ -47,10 +60,35 @@ async function directDatabasePurge() {
         const data = doc.data();
         const strData = JSON.stringify(data).toLowerCase();
 
+        let shouldDelete = false;
+        let reason = '';
+
         if (lowerId.includes('demo') || strData.includes('demo') || strData.includes('vekta@system.elite')) {
+          shouldDelete = true;
+          reason = 'Demo record';
+        } else if (colName === 'duels') {
+          // Check if duel belongs to deleted user
+          const chEmail = (data.challengerEmail || '').toLowerCase().trim();
+          const oppEmail = (data.opponentEmail || '').toLowerCase().trim();
+          const chId = data.challengerId || '';
+          const oppId = data.opponentId || '';
+
+          if ((chEmail && !validUserEmails.has(chEmail)) || (oppEmail && !validUserEmails.has(oppEmail)) || (chId && !validUserIds.has(chId)) || (oppId && !validUserIds.has(oppId))) {
+            shouldDelete = true;
+            reason = `Orphaned duel for deleted user (Challenger: ${chEmail || chId}, Opponent: ${oppEmail || oppId})`;
+          }
+        } else if (colName !== 'users' && colName !== 'characters' && colName !== 'careerTrees') {
+          const uId = data.userId || data.hunterId || data.fromUserId || data.toUserId || '';
+          if (uId && !validUserIds.has(uId)) {
+            shouldDelete = true;
+            reason = `Orphaned document for deleted userId ${uId}`;
+          }
+        }
+
+        if (shouldDelete) {
           await db.collection(colName).doc(docId).delete();
           deletedCount++;
-          console.log(`  [DELETED DEMO DOC] -> ${colName}/${docId}`);
+          console.log(`  [DELETED DOC] -> ${colName}/${docId} (${reason})`);
         }
       }
     } catch (err) {
@@ -58,33 +96,24 @@ async function directDatabasePurge() {
     }
   }
 
-  // 2. Direct Deduplication by Email in users/
-  try {
-    const usersSnap = await db.collection('users').get();
-    const emailMap = new Map();
+  // 3. User Deduplication
+  const emailMap = new Map();
+  for (const doc of usersSnap.docs) {
+    const data = doc.data();
+    const email = (data.email || '').toLowerCase().trim();
+    if (!email) continue;
 
-    for (const doc of usersSnap.docs) {
-      const data = doc.data();
-      const email = (data.email || '').toLowerCase().trim();
-      if (!email) continue;
-
-      if (emailMap.has(email)) {
-        // Redundant duplicate user -> DELETE from users, characters, careerTrees!
-        const dupId = doc.id;
-        await db.collection('users').doc(dupId).delete().catch(() => {});
-        await db.collection('characters').doc(dupId).delete().catch(() => {});
-        await db.collection('careerTrees').doc(`tree_${dupId}`).delete().catch(() => {});
-        deletedCount++;
-        console.log(`  [DELETED DUPLICATE USER DOC] -> users/${dupId} (Email: ${email})`);
-
-        // Also delete from Auth if applicable
-        auth.deleteUser(dupId).catch(() => {});
-      } else {
-        emailMap.set(email, doc.id);
-      }
+    if (emailMap.has(email)) {
+      const dupId = doc.id;
+      await db.collection('users').doc(dupId).delete().catch(() => {});
+      await db.collection('characters').doc(dupId).delete().catch(() => {});
+      await db.collection('careerTrees').doc(`tree_${dupId}`).delete().catch(() => {});
+      deletedCount++;
+      console.log(`  [DELETED DUPLICATE USER DOC] -> users/${dupId} (Email: ${email})`);
+      auth.deleteUser(dupId).catch(() => {});
+    } else {
+      emailMap.set(email, doc.id);
     }
-  } catch (err) {
-    console.error('[Error during user deduplication]:', err.message);
   }
 
   console.log('=====================================================');

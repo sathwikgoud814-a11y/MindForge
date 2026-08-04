@@ -432,18 +432,7 @@ export function SystemProvider({ children }) {
 
   // Completely wipe local storage & restart Awakening
   const resetAllSystemData = () => {
-    localStorage.removeItem('solo_onboarded');
-    localStorage.removeItem('solo_character');
-    localStorage.removeItem('solo_attributes');
-    localStorage.removeItem('solo_career_trees');
-    localStorage.removeItem('solo_custom_skills');
-    localStorage.removeItem('solo_missions');
-    localStorage.removeItem('solo_rewards');
-    localStorage.removeItem('solo_hunters');
-    localStorage.removeItem('solo_friend_requests');
-    localStorage.removeItem('solo_active_duels');
-    localStorage.removeItem('solo_onboarding_step');
-    localStorage.removeItem('solo_onboarding_data');
+    localStorage.clear();
     window.location.reload();
   };
 
