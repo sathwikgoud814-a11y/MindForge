@@ -128,7 +128,7 @@ export function SystemProvider({ children }) {
   const [showCareerModal, setShowCareerModal] = useState(false);
 
   // Theme Management ('light' | 'dark' | 'system')
-  const [themeMode, setThemeMode] = useState(() => getSavedState('solo_theme_preference', 'system'));
+  const [themeMode, setThemeMode] = useState(() => getSavedState('solo_theme_preference', 'dark'));
 
   useEffect(() => {
     localStorage.setItem('solo_theme_preference', JSON.stringify(themeMode));
@@ -147,8 +147,12 @@ export function SystemProvider({ children }) {
 
       if (isDark) {
         root.classList.add('dark');
+        root.classList.remove('light');
+        document.body.classList.add('dark');
       } else {
         root.classList.remove('dark');
+        root.classList.add('light');
+        document.body.classList.remove('dark');
       }
     };
 
@@ -159,8 +163,10 @@ export function SystemProvider({ children }) {
       const listener = (e) => {
         if (e.matches) {
           document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
         } else {
           document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
         }
       };
       mediaQuery.addEventListener('change', listener);

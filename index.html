@@ -1,10 +1,29 @@
 <!DOCTYPE html>
-<html lang="en" class="light">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>The System Productivity - Hunter Elite</title>
+    <!-- Inline theme initializer script to prevent theme flash and apply Dark Mode immediately -->
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('solo_theme_preference');
+          var mode = saved ? JSON.parse(saved) : 'dark';
+          var isDark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+          } else {
+            document.documentElement.classList.add('light');
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +31,7 @@
     <!-- Material Symbols Outlined -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
   </head>
-  <body class="bg-background text-on-background font-sans min-h-screen antialiased selection:bg-secondary-container selection:text-on-secondary-container">
+  <body class="bg-background text-primary font-sans min-h-screen antialiased selection:bg-gold-light selection:text-gold">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
