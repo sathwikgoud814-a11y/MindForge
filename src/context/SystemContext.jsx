@@ -347,9 +347,12 @@ export function SystemProvider({ children }) {
       const email = currentUser?.email || '';
       const uid = currentUser?.uid || '';
       const name = character?.name || '';
+      if (!email && !uid) return;
+
       try {
-        const res = await fetch(`/api/ai/my-duels?email=${encodeURIComponent(email)}&userId=${encodeURIComponent(uid)}&name=${encodeURIComponent(name)}`);
-        if (res.ok) {
+        const apiHost = window.location.hostname === 'localhost' ? '' : (import.meta.env.VITE_BACKEND_URL || '');
+        const res = await fetch(`${apiHost}/api/ai/my-duels?email=${encodeURIComponent(email)}&userId=${encodeURIComponent(uid)}&name=${encodeURIComponent(name)}`).catch(() => null);
+        if (res && res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data) && isMounted) {
             const activeFromDb = json.data.filter(d => d.status === 'active');
@@ -392,16 +395,18 @@ export function SystemProvider({ children }) {
           }
         }
       } catch (err) {
-        console.warn('[Sync Active Duels Warning]:', err.message);
+        // Quiet catch
       }
     }
 
-    syncActiveDuels();
-    const interval = setInterval(syncActiveDuels, 4000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+    if (currentUser?.email || currentUser?.uid) {
+      syncActiveDuels();
+      const interval = setInterval(syncActiveDuels, 10000);
+      return () => {
+        isMounted = false;
+        clearInterval(interval);
+      };
+    }
   }, [currentUser, character]);
 
   // 2. Sync state to localStorage
