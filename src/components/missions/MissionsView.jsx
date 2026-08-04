@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useSystem } from '../../context/SystemContext';
+import { getCategoryBadgeStyle } from '../../shared/utils/categoryColors';
 
 export function MissionsView() {
   const { missions, completeMission, setShowCreateMissionModal } = useSystem();
@@ -19,11 +20,11 @@ export function MissionsView() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full gold-gradient text-white uppercase tracking-wider">
-              Directive Execution
+              Directive Execution Engine
             </span>
           </div>
-          <h1 className="text-2xl font-black text-primary tracking-tight mt-0.5">Active Missions</h1>
-          <p className="text-xs text-primary-muted">Execute career-aligned directives to earn XP, Discipline Points (DP), and strengthen attributes.</p>
+          <h1 className="text-2xl font-black text-primary tracking-tight mt-0.5">Active Directives & Quests</h1>
+          <p className="text-xs text-primary-muted">Execute career-aligned directives to earn XP, Discipline Points (DP), and strengthen character attributes.</p>
         </div>
 
         <button
@@ -31,15 +32,15 @@ export function MissionsView() {
           className="px-5 py-3 rounded-2xl gold-gradient text-white font-extrabold text-xs shadow-md hover:scale-105 transition-transform flex items-center justify-center gap-1.5"
         >
           <span className="material-symbols-outlined text-base">add_circle</span>
-          Create New Mission
+          Create New Directive
         </button>
       </div>
 
       {/* Filters */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         {[
-          { id: 'ALL', label: 'All Missions' },
-          { id: 'PENDING', label: 'Pending Directives' },
+          { id: 'ALL', label: 'All Directives' },
+          { id: 'PENDING', label: 'Pending' },
           { id: 'S-Rank', label: 'S-Rank' },
           { id: 'A-Rank', label: 'A-Rank' },
           { id: 'B-Rank', label: 'B-Rank' },
@@ -90,12 +91,15 @@ export function MissionsView() {
                 <h3 className={`font-extrabold text-base ${m.completed ? 'line-through text-primary-muted' : 'text-primary'}`}>
                   {m.name}
                 </h3>
-                <p className="text-xs text-primary-muted font-medium mt-1">
-                  Skills: {m.relatedSkills?.join(' • ') || 'Core Growth'}
-                </p>
-                <p className="text-[11px] text-gold font-bold mt-0.5">
-                  Attributes: {m.attributesImproved?.join(' • ') || 'Focus +10, Knowledge +8'}
-                </p>
+              </div>
+
+              {/* Semantic Skill Domain Badges */}
+              <div className="flex items-center gap-1.5 flex-wrap text-[10px] pt-1">
+                {(m.relatedSkills || ['Core Growth']).map(sk => (
+                  <span key={sk} className={`px-2 py-0.5 rounded-lg border font-extrabold ${getCategoryBadgeStyle(sk)}`}>
+                    {sk}
+                  </span>
+                ))}
               </div>
             </div>
 
@@ -106,7 +110,7 @@ export function MissionsView() {
               </div>
 
               {m.completed ? (
-                <span className="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 font-extrabold text-xs border border-emerald-200 flex items-center gap-1">
+                <span className="px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 font-extrabold text-xs border border-emerald-500/30 flex items-center gap-1">
                   <span className="material-symbols-outlined text-sm">check_circle</span>
                   Completed ✓
                 </span>

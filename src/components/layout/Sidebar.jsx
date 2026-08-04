@@ -4,6 +4,8 @@ import { useSystem } from '../../context/SystemContext';
 export function Sidebar() {
   const { activeTab, setActiveTab, character, setShowCreateMissionModal } = useSystem();
 
+  const xpPct = Math.min(100, Math.round(((character.xp || 680) / (character.xpToNextLevel || 1000)) * 100));
+
   const navItems = [
     { id: 'commandCenter', label: 'Command Center', icon: 'dashboard' },
     { id: 'missions', label: 'Missions', icon: 'workspace_premium', badge: 'Active' },
@@ -16,21 +18,38 @@ export function Sidebar() {
 
   return (
     <aside className="hidden lg:flex flex-col h-screen fixed left-0 top-0 w-64 py-6 px-4 gap-6 border-r border-border-subtle bg-surface z-40 shadow-sm">
-      {/* Website Brand Logo */}
-      <div className="flex items-center gap-3 px-2 cursor-pointer" onClick={() => setActiveTab('commandCenter')}>
-        <div className="w-10 h-10 rounded-2xl gold-gradient p-0.5 shadow-sm flex items-center justify-center flex-shrink-0">
-          <div className="w-full h-full bg-surface rounded-xl flex items-center justify-center font-black text-lg text-primary">
-            S
+      {/* Website Brand Logo & Character Identity Header */}
+      <div
+        className="flex flex-col gap-3 px-2 py-3 rounded-2xl bg-surface-subtle border border-border-subtle cursor-pointer hover:border-gold/30 transition-colors"
+        onClick={() => setActiveTab('character')}
+        title="View Character Profile"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl gold-gradient p-0.5 shadow-sm flex items-center justify-center flex-shrink-0">
+            <div className="w-full h-full bg-surface rounded-xl flex items-center justify-center font-black text-lg text-primary">
+              {character.level || 2}
+            </div>
+          </div>
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="text-[9px] font-black px-2 py-0.5 rounded gold-gradient text-white uppercase tracking-wider">
+                {character.rank || 'Recruit'}
+              </span>
+            </div>
+            <h1 className="text-sm font-extrabold text-primary tracking-tight truncate">System Elite</h1>
+            <p className="text-[11px] font-bold text-gold truncate">{character.archetype || 'Creative Builder'}</p>
           </div>
         </div>
-        <div>
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md gold-gradient text-white uppercase tracking-wider">
-              {character.rank}
-            </span>
-            <span className="text-xs font-semibold text-primary-muted">Lvl {character.level}</span>
+
+        {/* Live XP Progress Bar inside Sidebar */}
+        <div className="flex flex-col gap-1 text-[10px] pt-1 border-t border-border-subtle">
+          <div className="flex justify-between font-bold text-primary-muted">
+            <span>XP Mastery</span>
+            <span className="text-primary font-black">{character.xp || 680} / {character.xpToNextLevel || 1000}</span>
           </div>
-          <h1 className="text-base font-extrabold text-primary tracking-tight">System Elite</h1>
+          <div className="w-full bg-surface-card h-1.5 rounded-full overflow-hidden border border-border-subtle">
+            <div className="gold-gradient h-full rounded-full transition-all duration-500 progress-glow" style={{ width: `${xpPct}%` }}></div>
+          </div>
         </div>
       </div>
 
@@ -49,27 +68,25 @@ export function Sidebar() {
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className={`material-symbols-outlined text-lg transition-colors ${
-                  isActive ? 'text-gold' : 'text-primary-muted group-hover:text-primary'
+                <span className={`material-symbols-outlined text-lg transition-transform group-hover:scale-110 ${
+                  isActive ? 'text-gold' : 'text-primary-muted'
                 }`}>
                   {item.icon}
                 </span>
                 <span>{item.label}</span>
               </div>
 
-              {item.highlight && (
-                <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
-                  isActive ? 'bg-gold text-white' : 'bg-gold-light text-gold border border-gold/30'
+              {item.badge && (
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  isActive ? 'bg-gold text-white' : 'bg-surface-subtle text-primary-muted border border-border-subtle'
                 }`}>
-                  {item.highlight}
+                  {item.badge}
                 </span>
               )}
 
-              {item.badge && !item.highlight && (
-                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                  isActive ? 'bg-gold/20 text-gold' : 'bg-surface-subtle text-primary-muted'
-                }`}>
-                  {item.badge}
+              {item.highlight && (
+                <span className="text-[10px] font-black text-gold">
+                  {item.highlight}
                 </span>
               )}
             </button>
@@ -77,31 +94,14 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Quick Action & Character DP Status Box */}
-      <div className="mt-auto flex flex-col gap-3">
-        <button
-          onClick={() => setShowCreateMissionModal(true)}
-          className="w-full bg-primary hover:bg-black text-white font-extrabold py-3 px-4 rounded-2xl text-xs transition-all flex items-center justify-center gap-2 shadow-md"
-        >
-          <span className="material-symbols-outlined text-gold text-base">add_circle</span>
-          + Create Mission
-        </button>
-
-        <div
-          onClick={() => setActiveTab('shop')}
-          className="p-4 rounded-2xl bg-gold-light/60 border border-gold/30 flex items-center justify-between cursor-pointer hover:bg-gold-light transition-colors shadow-sm"
-          title="Open Reward Shop"
-        >
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-gold uppercase tracking-wider">Discipline Balance</span>
-            <span className="text-sm font-black text-primary flex items-center gap-1 mt-0.5">
-              <span className="material-symbols-outlined text-gold text-base">stars</span>
-              {character.dp.toLocaleString()} DP
-            </span>
-          </div>
-          <span className="material-symbols-outlined text-gold text-xl">chevron_right</span>
-        </div>
-      </div>
+      {/* Quick Action Deploy Directive Button */}
+      <button
+        onClick={() => setShowCreateMissionModal(true)}
+        className="w-full py-3.5 rounded-2xl gold-gradient text-white font-extrabold text-xs shadow-md hover:scale-105 transition-transform flex items-center justify-center gap-2"
+      >
+        <span className="material-symbols-outlined text-base">add_circle</span>
+        + Deploy Directive
+      </button>
     </aside>
   );
 }
