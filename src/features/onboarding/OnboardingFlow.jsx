@@ -23,6 +23,7 @@ export function OnboardingFlow() {
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
+  const [authMode, setAuthMode] = useState('signIn'); // 'signIn' | 'signUp'
   const [verificationPending, setVerificationPending] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
 
@@ -146,7 +147,7 @@ export function OnboardingFlow() {
     }
   };
 
-  // Email Authentication - Strictly enforce verification
+  // Email Authentication - Distinct Sign In vs Sign Up Modes
   const handleEmailAuth = async (e) => {
     e.preventDefault();
     if (!authEmail.trim()) {
@@ -157,11 +158,25 @@ export function OnboardingFlow() {
     try {
       setAuthError('');
       let user;
-      try {
-        user = await signInWithEmail(authEmail, authPassword || 'MindForgePass123!');
-      } catch (signInErr) {
-        // Fallback to Sign Up
-        user = await signUpWithEmail(authEmail, authPassword || 'MindForgePass123!');
+
+      if (authMode === 'signIn') {
+        try {
+          user = await signInWithEmail(authEmail, authPassword || 'MindForgePass123!');
+        } catch (signInErr) {
+          if (signInErr.message?.includes('invalid-credential') || signInErr.message?.includes('user-not-found')) {
+            throw new Error('No account found with this email, or password is incorrect. Please verify your credentials or click "Create New Account".');
+          }
+          throw signInErr;
+        }
+      } else {
+        try {
+          user = await signUpWithEmail(authEmail, authPassword || 'MindForgePass123!');
+        } catch (signUpErr) {
+          if (signUpErr.message?.includes('email-already-in-use') || signUpErr?.code === 'auth/email-already-in-use') {
+            throw new Error('This email address is already registered in the System. Please switch to the "Sign In" tab above to log into your account.');
+          }
+          throw signUpErr;
+        }
       }
 
       if (user) {
@@ -186,8 +201,11 @@ export function OnboardingFlow() {
       }
     } catch (err) {
       console.error('[Email Auth Error]:', err);
-      setAuthError(err.message || 'Authentication error. Please check your credentials.');
-      // Strictly DO NOT call nextStep()
+      if (err.message?.includes('email-already-in-use') || err?.code === 'auth/email-already-in-use') {
+        setAuthError('This email address is already registered in the System. Please switch to the "Sign In" tab above to log into your account.');
+      } else {
+        setAuthError(err.message || 'Authentication error. Please check your credentials.');
+      }
     }
   };
 
@@ -452,10 +470,30 @@ export function OnboardingFlow() {
                   </button>
                 </div>
 
-                <div className="relative flex py-2 items-center">
-                  <div className="flex-grow border-t border-border-subtle"></div>
-                  <span className="flex-shrink mx-4 text-[10px] text-primary-muted font-bold uppercase">Or Email & Password</span>
-                  <div className="flex-grow border-t border-border-subtle"></div>
+                {/* Mode Selector: Sign In vs Create Account */}
+                <div className="flex p-1 bg-surface-subtle border border-border-subtle rounded-2xl gap-1">
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode('signIn'); setAuthError(''); }}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all ${
+                      authMode === 'signIn'
+                        ? 'bg-surface text-primary shadow-sm border border-gold/40'
+                        : 'text-primary-muted hover:text-primary'
+                    }`}
+                  >
+                    🔑 Sign In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode('signUp'); setAuthError(''); }}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all ${
+                      authMode === 'signUp'
+                        ? 'bg-surface text-primary shadow-sm border border-gold/40'
+                        : 'text-primary-muted hover:text-primary'
+                    }`}
+                  >
+                    ✨ Create New Account
+                  </button>
                 </div>
 
                 <form onSubmit={handleEmailAuth} className="flex flex-col gap-3 text-xs">
@@ -478,7 +516,7 @@ export function OnboardingFlow() {
                     type="submit"
                     className="w-full py-3.5 rounded-2xl gold-gradient text-white font-extrabold text-xs shadow-md hover:scale-105 transition-transform mt-1"
                   >
-                    Awaken Account with Email
+                    {authMode === 'signIn' ? 'Sign In to Account →' : 'Create Account & Awaken →'}
                   </button>
                 </form>
               </>
