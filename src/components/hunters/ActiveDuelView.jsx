@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../shared/config/firebase';
 import { useSystem } from '../../context/SystemContext';
 import { formatLiveFeedTime } from '../../shared/utils/timeUtils';
 
@@ -132,19 +134,16 @@ export function ActiveDuelView() {
     setViewingDuel(updatedDuel);
     setActiveDuels(prev => (prev || []).map(item => item.id === d.id ? updatedDuel : item));
 
-    // Persist score update to Firestore backend
-    fetch('/api/ai/update-duel-score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        duelId: d.id,
+    // Persist score update directly to Firestore `duels/` collection
+    if (d.id) {
+      updateDoc(doc(db, 'duels', d.id), {
         userScore: updatedUserScore,
         userMissions: updatedMissionsCount,
         currentLeader: newLeader,
-        duelMissions: updatedMissionsList,
         liveFeed: [newFeedItem, ...(d.liveFeed || [])],
-      })
-    }).catch(err => console.warn('[Update Duel Score Error]:', err));
+        updatedAt: new Date().toISOString(),
+      }).catch(err => console.warn('[Update Duel Score Error]:', err));
+    }
 
     // Also complete matching main system mission if available
     const mainM = (missions || []).find(m => m.name.toLowerCase().includes(missionName.toLowerCase()));
