@@ -9,9 +9,10 @@ import {
   sendVerificationEmail
 } from '../../shared/services/authService';
 import { getDynamicSkillTree, getCareerDefaults } from '../../shared/services/careerEngine';
+import { COUNTRIES, RELIGIONS, AVAILABLE_HOLIDAY_CALENDARS, HolidayCalendarProvider } from '../../shared/services/holidayCalendarProvider';
 
 export function OnboardingFlow() {
-  const { completeOnboarding, setIsOnboarded, currentUser } = useSystem();
+  const { completeOnboarding, setIsOnboarded, currentUser, updatePrivateCalendarSettings } = useSystem();
 
   // Saved step progress in localStorage
   const [currentStep, setCurrentStep] = useState(() => {
@@ -79,14 +80,19 @@ export function OnboardingFlow() {
     }));
   };
 
-  const totalSteps = 11;
+  const [calendarReligion, setCalendarReligion] = useState('PreferNotToAnswer');
+  const [calendarCustomReligion, setCalendarCustomReligion] = useState('');
+  const [calendarCountry, setCalendarCountry] = useState('IN');
+  const [enabledCalendars, setEnabledCalendars] = useState(['national_in']);
+
+  const totalSteps = 12;
   const progressPct = Math.round((currentStep / totalSteps) * 100);
 
   const nextStep = () => {
     if (currentStep < totalSteps) {
-      if (currentStep === 9) {
-        // Trigger System Scanner in Step 10
-        setCurrentStep(10);
+      if (currentStep === 10) {
+        // Trigger System Scanner in Step 11
+        setCurrentStep(11);
         startSystemScan();
       } else {
         setCurrentStep(prev => prev + 1);
@@ -873,13 +879,135 @@ export function OnboardingFlow() {
               onClick={nextStep}
               className="w-full py-3.5 rounded-2xl gold-gradient text-white font-extrabold text-xs shadow-md hover:scale-105 transition-transform"
             >
-              Run System Analysis Scan →
+              Configure Calendar Preferences →
             </button>
           </div>
         )}
 
-        {/* STEP 10: SYSTEM ANALYSIS SCANNER */}
+        {/* STEP 10: PRIVATE CALENDAR PREFERENCES */}
         {currentStep === 10 && (
+          <div className="apple-card p-8 md:p-10 flex flex-col gap-6 shadow-md animate-in fade-in duration-300">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gold uppercase tracking-wider">Step 10: Private Calendar</span>
+                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-surface-subtle text-primary border border-border-subtle uppercase">
+                  Private & Confidential
+                </span>
+              </div>
+              <h2 className="text-2xl font-black text-primary mt-1">Personalize Your Calendar</h2>
+              <p className="text-xs text-primary-muted">
+                Choose the holidays you'd like to see in your Planner. This information is private and only affects your own calendar.
+              </p>
+            </div>
+
+            {/* Privacy Disclaimer Banner */}
+            <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-start gap-3">
+              <span className="material-symbols-outlined text-blue-400 text-xl flex-shrink-0 mt-0.5">lock</span>
+              <p className="text-xs text-blue-300 font-medium leading-relaxed">
+                Your religion and holiday preferences are stored privately and are only used to personalize your calendar. They are never displayed publicly or shared with other users.
+              </p>
+            </div>
+
+            {/* Religion Selector */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-extrabold text-primary">Religion / Holiday Preference</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {RELIGIONS.map(r => (
+                  <button
+                    key={r.id}
+                    onClick={() => {
+                      setCalendarReligion(r.id);
+                      const rec = HolidayCalendarProvider.getRecommendedCalendars(r.id, calendarCountry);
+                      setEnabledCalendars(prev => Array.from(new Set([...prev, ...rec])));
+                    }}
+                    className={`p-3 rounded-2xl text-xs font-extrabold border transition-all text-left ${
+                      calendarReligion === r.id
+                        ? 'bg-primary text-white border-primary shadow-sm'
+                        : 'bg-surface-subtle text-primary-muted border-border-subtle hover:text-primary'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+
+              {calendarReligion === 'Other' && (
+                <input
+                  type="text"
+                  placeholder="Enter custom holiday label (e.g. Traditional Festival)"
+                  value={calendarCustomReligion}
+                  onChange={e => setCalendarCustomReligion(e.target.value)}
+                  className="w-full mt-2 p-3 rounded-xl bg-surface-subtle border border-border-subtle text-xs text-primary font-bold focus:outline-none focus:border-gold"
+                />
+              )}
+            </div>
+
+            {/* Country Selector */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-extrabold text-primary">Country / Region (National Public Holidays)</label>
+              <select
+                value={calendarCountry}
+                onChange={e => {
+                  setCalendarCountry(e.target.value);
+                  const rec = HolidayCalendarProvider.getRecommendedCalendars(calendarReligion, e.target.value);
+                  setEnabledCalendars(prev => Array.from(new Set([...prev, ...rec])));
+                }}
+                className="w-full p-3.5 rounded-2xl bg-surface-subtle border border-border-subtle text-xs font-bold text-primary focus:outline-none focus:border-gold"
+              >
+                {COUNTRIES.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.flag} {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Recommended & Enabled Holiday Calendars */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-extrabold text-primary">Enabled Holiday Calendars</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                {AVAILABLE_HOLIDAY_CALENDARS.map(cal => {
+                  const isChecked = enabledCalendars.includes(cal.id);
+                  return (
+                    <label key={cal.id} className="p-3 rounded-2xl bg-surface-subtle border border-border-subtle flex items-center justify-between cursor-pointer hover:border-gold/40">
+                      <span className="font-extrabold text-primary">{cal.name}</span>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setEnabledCalendars(prev => [...prev, cal.id]);
+                          } else {
+                            setEnabledCalendars(prev => prev.filter(id => id !== cal.id));
+                          }
+                        }}
+                        className="w-4 h-4 accent-gold cursor-pointer"
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                updatePrivateCalendarSettings({
+                  religion: calendarReligion,
+                  customReligionLabel: calendarCustomReligion,
+                  country: calendarCountry,
+                  enabledCalendars,
+                });
+                nextStep();
+              }}
+              className="w-full py-3.5 rounded-2xl gold-gradient text-white font-extrabold text-xs shadow-md hover:scale-105 transition-transform"
+            >
+              Save Private Calendar & Continue →
+            </button>
+          </div>
+        )}
+
+        {/* STEP 11: SYSTEM ANALYSIS SCANNER */}
+        {currentStep === 11 && (
           <div className="apple-card p-8 md:p-10 flex flex-col items-center text-center gap-6 shadow-md animate-in fade-in duration-300">
             {isScanning ? (
               <div className="flex flex-col items-center gap-6 py-12">
@@ -968,8 +1096,8 @@ export function OnboardingFlow() {
           </div>
         )}
 
-        {/* STEP 11: CHARACTER AWAKENING CINEMATIC SUMMARY */}
-        {currentStep === 11 && (
+        {/* STEP 12: CHARACTER AWAKENING CINEMATIC SUMMARY */}
+        {currentStep === 12 && (
           <div className="apple-card p-8 md:p-12 flex flex-col items-center text-center gap-8 shadow-xl border-2 border-gold animate-in zoom-in-95 duration-400">
             <div className="w-24 h-24 rounded-3xl gold-gradient flex items-center justify-center font-black text-white text-5xl shadow-2xl animate-pulse">
               S

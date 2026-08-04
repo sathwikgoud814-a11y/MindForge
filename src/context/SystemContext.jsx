@@ -129,6 +129,35 @@ export function SystemProvider({ children }) {
   const [showCreateSkillModal, setShowCreateSkillModal] = useState(false);
   const [showCareerModal, setShowCareerModal] = useState(false);
 
+  // Custom Calendar Events & Active View Persistence
+  const [customEvents, setCustomEvents] = useState(() => {
+    return getSavedState('solo_custom_calendar_events', [
+      { id: 'evt_1', title: 'System Architecture Review', type: 'meeting', date: new Date().toISOString().slice(0, 10), time: '10:00 AM', duration: '60 Mins', priority: 'High', color: '#3B82F6' },
+      { id: 'evt_2', title: 'Cardio & HIIT Fitness Session', type: 'workout', date: new Date().toISOString().slice(0, 10), time: '05:00 PM', duration: '45 Mins', priority: 'Medium', color: '#22C55E' },
+    ]);
+  });
+
+  const [activeCalendarView, setActiveCalendarView] = useState(() => {
+    return getSavedState('solo_calendar_view', 'week');
+  });
+
+  const addCustomEvent = (newEvent) => {
+    const updated = [...customEvents, newEvent];
+    setCustomEvents(updated);
+    localStorage.setItem('solo_custom_calendar_events', JSON.stringify(updated));
+  };
+
+  const deleteCustomEvent = (eventId) => {
+    const updated = customEvents.filter(e => e.id !== eventId);
+    setCustomEvents(updated);
+    localStorage.setItem('solo_custom_calendar_events', JSON.stringify(updated));
+  };
+
+  const changeCalendarView = (viewMode) => {
+    setActiveCalendarView(viewMode);
+    localStorage.setItem('solo_calendar_view', JSON.stringify(viewMode));
+  };
+
   // Dynamic Hunter Rating Calculation & Promotion Trigger
   const hunterRating = HunterRatingEngine.calculateRating({ character, attributes, customSkills, missions, activeDuels });
   const evaluatedRank = HunterRatingEngine.getRankForRating(hunterRating);
@@ -165,6 +194,22 @@ export function SystemProvider({ children }) {
 
   // Theme Management ('light' | 'dark' | 'system')
   const [themeMode, setThemeMode] = useState(() => getSavedState('solo_theme_preference', 'dark'));
+
+  // Private Calendar Preferences (Strictly isolated from public character profile)
+  const [privateCalendarSettings, setPrivateCalendarSettings] = useState(() => {
+    return getSavedState('solo_private_calendar_settings', {
+      religion: 'PreferNotToAnswer',
+      customReligionLabel: '',
+      country: 'IN',
+      enabledCalendars: ['national_in'],
+    });
+  });
+
+  const updatePrivateCalendarSettings = (newSettings) => {
+    const updated = { ...privateCalendarSettings, ...newSettings };
+    setPrivateCalendarSettings(updated);
+    localStorage.setItem('solo_private_calendar_settings', JSON.stringify(updated));
+  };
 
   useEffect(() => {
     localStorage.setItem('solo_theme_preference', JSON.stringify(themeMode));
@@ -919,6 +964,13 @@ export function SystemProvider({ children }) {
       evaluatedRank,
       rankPromotionOverlay,
       setRankPromotionOverlay,
+      privateCalendarSettings,
+      updatePrivateCalendarSettings,
+      customEvents,
+      activeCalendarView,
+      addCustomEvent,
+      deleteCustomEvent,
+      changeCalendarView,
       completeMission,
       createMission,
       createReward,

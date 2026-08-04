@@ -5,7 +5,7 @@ import { SkillTreeVisualization } from './SkillTreeVisualization';
 import { SkillCategoryAccordion } from './SkillCategoryAccordion';
 
 export function CharacterView() {
-  const { character, attributes, themeMode, setThemeMode } = useSystem();
+  const { character, attributes, themeMode, setThemeMode, privateCalendarSettings } = useSystem();
 
   const safeChar = character || {};
   const safeAttrs = attributes || {};
@@ -170,6 +170,56 @@ export function CharacterView() {
 
       {/* 6. Collapsible Skill Categories Accordion */}
       <SkillCategoryAccordion />
+
+      {/* 7. Private Calendar Settings Manager */}
+      <section className="apple-card p-6 md:p-8 flex flex-col gap-6 shadow-sm border-l-4 border-l-blue-500">
+        <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
+          <div>
+            <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">Private & Confidential Settings</span>
+            <h3 className="text-xl font-black text-primary tracking-tight mt-0.5">Planner & Calendar Preferences</h3>
+          </div>
+          <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/30">
+            Settings → Calendar
+          </span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-start gap-3">
+          <span className="material-symbols-outlined text-blue-400 text-xl flex-shrink-0 mt-0.5">lock</span>
+          <p className="text-xs text-blue-300 font-medium leading-relaxed">
+            Your religion and holiday preferences are stored privately in your personal settings document. They are used exclusively to personalize your Planner and are never displayed on your public profile, leaderboards, duels, or shared data.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+          <div className="p-4 rounded-2xl bg-surface-subtle border border-border-subtle flex flex-col gap-3">
+            <span className="font-extrabold text-primary uppercase text-[10px]">Religion / Holiday Preference</span>
+            <span className="font-black text-primary text-sm">
+              {privateCalendarSettings?.religion === 'Other'
+                ? `Other (${privateCalendarSettings?.customReligionLabel || 'Custom'})`
+                : privateCalendarSettings?.religion || 'Prefer Not To Answer'}
+            </span>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-surface-subtle border border-border-subtle flex flex-col gap-3">
+            <span className="font-extrabold text-primary uppercase text-[10px]">Selected Region</span>
+            <span className="font-black text-gold text-sm">
+              {privateCalendarSettings?.country || 'India (IN)'}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-xs font-extrabold text-primary uppercase">Active Holiday Calendars</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            {(privateCalendarSettings?.enabledCalendars || ['national_in']).map(calId => (
+              <div key={calId} className="p-3 rounded-2xl bg-surface-subtle border border-border-subtle flex items-center justify-between font-extrabold text-primary">
+                <span>{calId.toUpperCase().replace('_', ' ')} Calendar</span>
+                <span className="text-emerald-400 text-[10px]">Active ✓</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
