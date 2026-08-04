@@ -20,7 +20,8 @@ const formatAuthError = (err) => {
     return 'OAuth Provider (Google/GitHub) is disabled in Firebase. Please enable it in Firebase Console > Build > Authentication > Sign-in method.';
   }
   if (code === 'auth/unauthorized-domain' || message.includes('unauthorized-domain')) {
-    return 'Domain is not authorized for Firebase Auth. Please add localhost in Firebase Console > Authentication > Settings > Authorized domains.';
+    const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'your domain';
+    return `Domain '${currentDomain}' is not authorized in Firebase. Please add '${currentDomain}' in Firebase Console > Authentication > Settings > Authorized domains.`;
   }
   if (code === 'auth/popup-blocked' || message.includes('popup-blocked')) {
     return 'Sign-in popup was blocked by your browser. Please allow popups for localhost and try again.';
