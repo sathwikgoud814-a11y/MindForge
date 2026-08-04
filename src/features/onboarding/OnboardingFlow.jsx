@@ -114,7 +114,8 @@ export function OnboardingFlow() {
       if (user) {
         setFormData(prev => ({
           ...prev,
-          name: user.displayName || 'Vekta',
+          name: user.displayName || user.email?.split('@')[0] || 'Vekta',
+          email: user.email || '',
           avatar: user.photoURL || prev.avatar
         }));
         nextStep();
@@ -122,7 +123,6 @@ export function OnboardingFlow() {
     } catch (e) {
       console.error('[Google Auth Error]:', e);
       setAuthError('Google sign in failed or popup was closed. Please authenticate to proceed.');
-      // Strictly DO NOT call nextStep()
     }
   };
 
@@ -134,7 +134,8 @@ export function OnboardingFlow() {
       if (user) {
         setFormData(prev => ({
           ...prev,
-          name: user.displayName || 'Vekta',
+          name: user.displayName || user.email?.split('@')[0] || 'Vekta',
+          email: user.email || '',
           avatar: user.photoURL || prev.avatar
         }));
         nextStep();
@@ -142,7 +143,6 @@ export function OnboardingFlow() {
     } catch (e) {
       console.error('[GitHub Auth Error]:', e);
       setAuthError('GitHub sign in failed or popup was closed. Please authenticate to proceed.');
-      // Strictly DO NOT call nextStep()
     }
   };
 
@@ -167,7 +167,8 @@ export function OnboardingFlow() {
       if (user) {
         setFormData(prev => ({
           ...prev,
-          name: user.displayName || authEmail.split('@')[0] || 'Vekta'
+          name: user.displayName || authEmail.split('@')[0] || 'Vekta',
+          email: user.email || authEmail,
         }));
 
         // Strict Email Verification Check
@@ -370,13 +371,13 @@ export function OnboardingFlow() {
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full max-w-xs">
               <button
-                onClick={nextStep}
+                onClick={() => setCurrentStep(2)}
                 className="w-full py-4 rounded-2xl gold-gradient text-white font-extrabold text-sm shadow-md hover:scale-105 transition-transform"
               >
                 Get Started
               </button>
               <button
-                onClick={() => setIsOnboarded(true)}
+                onClick={() => setCurrentStep(2)}
                 className="w-full py-4 rounded-2xl bg-surface-subtle text-primary font-extrabold text-sm border border-border-subtle hover:bg-white"
               >
                 Sign In
