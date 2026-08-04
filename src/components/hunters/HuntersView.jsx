@@ -243,10 +243,7 @@ export function HuntersView() {
     (h.email && h.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Cleanup demo_* data on load
-  useEffect(() => {
-    fetch('/api/ai/cleanup-demo-data', { method: 'POST' }).catch(() => {});
-  }, []);
+  // Demo cleanup is handled automatically on server startup
 
   const handleAddHunter = async (e) => {
     e.preventDefault();

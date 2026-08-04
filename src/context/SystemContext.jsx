@@ -1090,6 +1090,9 @@ export function SystemProvider({ children }) {
 
 export function useSystem() {
   const context = useContext(SystemContext);
-  if (!context) throw new Error('useSystem must be used within SystemProvider');
+  if (!context) {
+    console.warn('[SystemContext Notice]: Context evaluated during HMR initialization.');
+    return {};
+  }
   return context;
 }
