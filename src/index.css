@@ -6,12 +6,13 @@
   :root {
     --bg-background: #FAFAFA;
     --bg-surface: #FFFFFF;
-    --bg-surface-subtle: #F5F5F7;
+    --bg-surface-subtle: #F4F4F5;
     --bg-surface-card: #FFFFFF;
+    --bg-surface-elevated: #FFFFFF;
     --border-subtle: rgba(0, 0, 0, 0.08);
     --border-gold: rgba(212, 175, 55, 0.3);
-    --text-primary: #111111;
-    --text-primary-muted: #666666;
+    --text-primary: #0F172A;
+    --text-primary-muted: #64748B;
     --accent-gold: #D4AF37;
     --gold-light: #F9F3E3;
     --gold-hover: #C59F27;
@@ -23,31 +24,32 @@
   }
 
   html.dark {
-    --bg-background: #0F1115;
-    --bg-surface: #171A21;
-    --bg-surface-subtle: #14171F;
-    --bg-surface-card: #1E222B;
-    --border-subtle: #2A2F3A;
+    --bg-background: #0B0F14;
+    --bg-surface: #111827;
+    --bg-surface-subtle: #161F30;
+    --bg-surface-card: #1B2230;
+    --bg-surface-elevated: #242C3B;
+    --border-subtle: rgba(255, 255, 255, 0.08);
     --border-gold: rgba(212, 175, 55, 0.35);
-    --text-primary: #F5F7FA;
-    --text-primary-muted: #A7B0BE;
+    --text-primary: #F8FAFC;
+    --text-primary-muted: #94A3B8;
     --accent-gold: #D4AF37;
     --gold-light: rgba(212, 175, 55, 0.15);
     --gold-hover: #E5BE3B;
-    --status-success: #4ADE80;
-    --status-warning: #FBBF24;
-    --status-error: #F87171;
-    --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.4);
-    --shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.6);
+    --status-success: #22C55E;
+    --status-warning: #F59E0B;
+    --status-error: #EF4444;
+    --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.5);
+    --shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.7);
   }
 
-  body {
-    background-color: var(--bg-background);
-    color: var(--text-primary);
+  html, body {
+    background-color: var(--bg-background) !important;
+    color: var(--text-primary) !important;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    transition: background-color 300ms ease, color 300ms ease;
+    transition: background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), color 200ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 }
 
@@ -55,12 +57,14 @@
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   display: inline-block;
   vertical-align: middle;
+  color: inherit;
 }
 
 .material-symbols-filled {
   font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
   display: inline-block;
   vertical-align: middle;
+  color: inherit;
 }
 
 .gold-gradient {
@@ -88,7 +92,7 @@ html.dark .gold-gradient-text {
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-soft);
   border-radius: 1.5rem;
-  transition: background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+  transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
 }
 
 .apple-card-hover {
@@ -105,17 +109,17 @@ html.dark .gold-gradient-text {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   background-color: rgba(255, 255, 255, 0.88);
-  transition: background-color 300ms ease, border-color 300ms ease;
+  transition: background-color 200ms ease, border-color 200ms ease;
 }
 
 html.dark .glass-nav {
-  background-color: rgba(23, 26, 33, 0.88);
-  border-color: #2A2F3A;
+  background-color: rgba(17, 24, 39, 0.88);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
-/* Dark Mode Progress Bar Subtle Gold Glow */
+/* Dark Mode Progress Bar Soft Gold Glow */
 html.dark .progress-glow {
-  box-shadow: 0 0 12px rgba(212, 175, 55, 0.35);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
 }
 
 /* Custom Minimal Scrollbar */

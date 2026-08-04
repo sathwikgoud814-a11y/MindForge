@@ -69,12 +69,12 @@ export function SkillCategoryAccordion() {
             <div key={cat} className="rounded-2xl border border-border-subtle overflow-hidden transition-all">
               <button
                 onClick={() => setOpenCategory(isOpen ? null : cat)}
-                className="w-full p-4 bg-surface-subtle hover:bg-white flex items-center justify-between font-extrabold text-xs text-primary transition-colors"
+                className="w-full p-4 bg-surface-subtle hover:bg-surface-card flex items-center justify-between font-extrabold text-xs text-primary transition-colors"
               >
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-gold text-base">folder</span>
                   <span>{cat}</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-primary-muted border border-border-subtle">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-elevated text-primary-muted border border-border-subtle">
                     {items.length} Skills
                   </span>
                 </div>
@@ -85,7 +85,7 @@ export function SkillCategoryAccordion() {
               </button>
 
               {isOpen && (
-                <div className="p-4 bg-white border-t border-border-subtle grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 animate-in fade-in duration-200">
+                <div className="p-4 bg-surface-card border-t border-border-subtle grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 animate-in fade-in duration-200">
                   {items.length === 0 ? (
                     <div className="col-span-full py-4 text-center text-xs text-primary-muted font-medium">
                       No skills unlocked under {cat} yet.

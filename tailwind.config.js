@@ -17,6 +17,7 @@ export default {
         "background": "var(--bg-background)",
         "surface-subtle": "var(--bg-surface-subtle)",
         "surface-card": "var(--bg-surface-card)",
+        "surface-elevated": "var(--bg-surface-elevated)",
         "border-subtle": "var(--border-subtle)",
         "border-gold": "var(--border-gold)",
         "status-success": "var(--status-success)",

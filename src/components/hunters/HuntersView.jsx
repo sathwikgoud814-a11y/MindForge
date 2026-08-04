@@ -263,7 +263,7 @@ export function HuntersView() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {safeDuels.map(d => (
-              <div key={d.id} className="p-5 rounded-2xl bg-white border border-gold/40 flex flex-col justify-between gap-4 shadow-sm">
+              <div key={d.id} className="p-5 rounded-2xl bg-surface-card border border-gold/40 flex flex-col justify-between gap-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full gold-gradient text-white uppercase">
                     {d.category || 'General'}
@@ -308,7 +308,7 @@ export function HuntersView() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {incomingDuels.map(d => (
-              <div key={d.id} className="p-4 rounded-2xl bg-white border border-gold/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+              <div key={d.id} className="p-4 rounded-2xl bg-surface-card border border-gold/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full gold-gradient text-white uppercase">

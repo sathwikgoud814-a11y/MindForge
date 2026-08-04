@@ -173,7 +173,7 @@ export function CreateMissionModal() {
             onClick={() => setActiveTab('RECOMMENDED')}
             className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
               activeTab === 'RECOMMENDED'
-                ? 'bg-white text-primary shadow-sm'
+                ? 'bg-surface-card text-primary shadow-sm'
                 : 'text-primary-muted hover:text-primary'
             }`}
           >
@@ -184,7 +184,7 @@ export function CreateMissionModal() {
             onClick={() => setActiveTab('CUSTOM_AI')}
             className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
               activeTab === 'CUSTOM_AI'
-                ? 'bg-white text-primary shadow-sm'
+                ? 'bg-surface-card text-primary shadow-sm'
                 : 'text-primary-muted hover:text-primary'
             }`}
           >
@@ -235,7 +235,7 @@ export function CreateMissionModal() {
                     <div className="flex items-center gap-2 flex-wrap text-[10px]">
                       <span className="font-bold text-primary-muted uppercase">Linked Impact:</span>
                       {(rec.relatedSkills || []).map(sk => (
-                        <span key={sk} className="px-2 py-0.5 rounded-md bg-white border border-border-subtle font-extrabold text-primary">
+                        <span key={sk} className="px-2 py-0.5 rounded-md bg-surface-elevated border border-border-subtle font-extrabold text-primary">
                           🎯 {sk}
                         </span>
                       ))}
@@ -250,13 +250,13 @@ export function CreateMissionModal() {
                     <div className="flex items-center justify-end gap-2 pt-1 border-t border-border-subtle text-xs">
                       <button
                         onClick={() => handleSkipRecommendation(rec.id)}
-                        className="px-3 py-1.5 rounded-xl bg-white border border-border-subtle font-bold text-primary-muted hover:text-red-600"
+                        className="px-3 py-1.5 rounded-xl bg-surface-elevated border border-border-subtle font-bold text-primary-muted hover:text-red-600"
                       >
                         Skip ✕
                       </button>
                       <button
                         onClick={() => handleReplaceRecommendation(rec.id)}
-                        className="px-3 py-1.5 rounded-xl bg-white border border-border-subtle font-bold text-primary-muted hover:text-primary"
+                        className="px-3 py-1.5 rounded-xl bg-surface-elevated border border-border-subtle font-bold text-primary-muted hover:text-primary"
                       >
                         Replace 🔄
                       </button>
@@ -352,7 +352,7 @@ export function CreateMissionModal() {
                       <button
                         type="button"
                         onClick={() => setAiAnalysis(null)}
-                        className="px-4 py-2 rounded-xl bg-white border border-red-200 text-red-700 font-bold"
+                        className="px-4 py-2 rounded-xl bg-surface-elevated border border-red-200 text-red-700 font-bold"
                       >
                         Modify Input
                       </button>
@@ -378,7 +378,7 @@ export function CreateMissionModal() {
                       <span className="font-extrabold text-primary uppercase text-[10px]">Linked Skills:</span>
                       <div className="flex items-center gap-2 flex-wrap">
                         {(aiAnalysis.relatedSkills || []).map(sk => (
-                          <span key={sk} className="px-2.5 py-1 rounded-xl bg-white border border-border-subtle font-extrabold text-primary">
+                          <span key={sk} className="px-2.5 py-1 rounded-xl bg-surface-elevated border border-border-subtle font-extrabold text-primary">
                             🎯 {sk}
                           </span>
                         ))}

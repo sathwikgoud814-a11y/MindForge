@@ -243,7 +243,7 @@ export function ActiveDuelView() {
         <div className="flex items-center gap-3 w-full md:w-auto justify-end">
           <button
             onClick={handleLogFocusHour}
-            className="px-4 py-2.5 rounded-xl bg-white border border-border-subtle font-extrabold text-xs text-primary hover:border-gold/40 transition-colors shadow-2xs flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl bg-surface-elevated border border-border-subtle font-extrabold text-xs text-primary hover:border-gold/40 transition-colors shadow-2xs flex items-center gap-1.5"
           >
             <span className="material-symbols-outlined text-gold text-base">timer</span>
             +1h Focus (+50 PTS)
@@ -263,7 +263,7 @@ export function ActiveDuelView() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl gold-gradient p-0.5 shadow-sm">
-              <div className="w-full h-full bg-white rounded-xl flex items-center justify-center font-black text-xl text-primary">
+              <div className="w-full h-full bg-surface rounded-xl flex items-center justify-center font-black text-xl text-primary">
                 S
               </div>
             </div>

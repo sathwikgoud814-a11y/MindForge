@@ -129,7 +129,7 @@ export function CommandCenter() {
                 <div key={m.id} className="p-4 rounded-2xl bg-surface-subtle border border-border-subtle flex items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white text-primary border border-border-subtle">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-elevated text-primary border border-border-subtle">
                         {m.difficulty}
                       </span>
                       <span className="text-sm font-extrabold text-primary">{m.name}</span>
