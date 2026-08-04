@@ -229,6 +229,150 @@ router.post('/update-duel-score', async (req, res) => {
   }
 });
 
+// POST Cleanup all demo_* documents & merge email duplicates in Firestore
+router.post('/cleanup-demo-data', async (req, res) => {
+  try {
+    if (!adminDb) {
+      return res.status(500).json({ success: false, error: 'Firebase Admin not initialized' });
+    }
+
+    const collections = ['users', 'characters', 'careerTrees', 'duels', 'connections', 'friendRequests'];
+    let deletedCount = 0;
+
+    for (const col of collections) {
+      const snap = await adminDb.collection(col).get();
+      for (const doc of snap.docs) {
+        const id = doc.id.toLowerCase();
+        const data = doc.data();
+        const strData = JSON.stringify(data).toLowerCase();
+
+        if (id.startsWith('demo') || strData.includes('demo_user')) {
+          await adminDb.collection(col).doc(doc.id).delete();
+          deletedCount++;
+        }
+      }
+    }
+
+    // Merge duplicate email docs in users/ and characters/
+    const usersSnap = await adminDb.collection('users').get();
+    const emailToDocMap = new Map();
+
+    for (const doc of usersSnap.docs) {
+      const data = doc.data();
+      const email = (data.email || '').toLowerCase().trim();
+      if (!email) continue;
+
+      if (emailToDocMap.has(email)) {
+        // Delete redundant duplicate doc
+        await adminDb.collection('users').doc(doc.id).delete();
+        await adminDb.collection('characters').doc(doc.id).delete().catch(() => {});
+        deletedCount++;
+      } else {
+        emailToDocMap.set(email, doc.id);
+      }
+    }
+
+    console.log(`[Firestore Demo Cleanup] Deleted ${deletedCount} demo/duplicate documents`);
+    res.json({ success: true, deletedCount });
+  } catch (err) {
+    console.error('[Demo Cleanup Error]:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST Send Hunter Connection Request
+router.post('/send-connection', async (req, res) => {
+  try {
+    if (!adminDb) {
+      return res.status(500).json({ success: false, error: 'Firebase Admin not initialized' });
+    }
+
+    const { sender, targetHunter } = req.body;
+    const reqId = `conn_${Date.now()}`;
+
+    const connData = {
+      id: reqId,
+      senderId: sender?.uid || 'user_local',
+      senderName: sender?.displayName || sender?.name || 'Hunter',
+      senderEmail: (sender?.email || '').toLowerCase().trim(),
+      targetId: targetHunter?.id || targetHunter?.uid || '',
+      targetName: targetHunter?.name || '',
+      targetEmail: (targetHunter?.email || '').toLowerCase().trim(),
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+
+    await adminDb.collection('connections').doc(reqId).set(connData);
+    await adminDb.collection('friendRequests').doc(reqId).set(connData);
+
+    res.json({ success: true, connection: connData });
+  } catch (err) {
+    console.error('[Send Connection Error]:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST Accept Hunter Connection Request
+router.post('/accept-connection', async (req, res) => {
+  try {
+    if (!adminDb) {
+      return res.status(500).json({ success: false, error: 'Firebase Admin not initialized' });
+    }
+
+    const { requestId, senderEmail, targetEmail } = req.body;
+
+    const connSnap = await adminDb.collection('connections').get();
+    let targetDocId = requestId;
+
+    connSnap.forEach(doc => {
+      const data = doc.data();
+      if (doc.id === requestId ||
+         ((data.senderEmail || '').toLowerCase().trim() === (senderEmail || '').toLowerCase().trim() &&
+          (data.targetEmail || '').toLowerCase().trim() === (targetEmail || '').toLowerCase().trim())) {
+        targetDocId = doc.id;
+      }
+    });
+
+    const updateData = { status: 'accepted', updatedAt: new Date().toISOString() };
+    await adminDb.collection('connections').doc(targetDocId).set(updateData, { merge: true });
+    await adminDb.collection('friendRequests').doc(targetDocId).set(updateData, { merge: true });
+
+    res.json({ success: true, status: 'accepted' });
+  } catch (err) {
+    console.error('[Accept Connection Error]:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET Active Connections for a user
+router.get('/my-connections', async (req, res) => {
+  try {
+    if (!adminDb) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const userEmail = (req.query.email || '').toLowerCase().trim();
+    const connSnap = await adminDb.collection('connections').get();
+    const activeConns = [];
+
+    connSnap.forEach(doc => {
+      const d = doc.data();
+      if (d.status === 'accepted') {
+        const sEmail = (d.senderEmail || '').toLowerCase().trim();
+        const tEmail = (d.targetEmail || '').toLowerCase().trim();
+        if (!userEmail || sEmail === userEmail || tEmail === userEmail) {
+          activeConns.push(d);
+        }
+      }
+    });
+
+    res.json({ success: true, data: activeConns });
+  } catch (err) {
+    console.error('[Get Connections Error]:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // POST Sync Profile to Firestore via Firebase Admin SDK
 router.post('/sync-profile', async (req, res) => {
   try {
@@ -237,7 +381,23 @@ router.post('/sync-profile', async (req, res) => {
     }
 
     const { userId, character, onboardingData } = req.body;
-    const uid = userId || 'user_' + Date.now();
+    const targetEmail = (onboardingData?.email || '').toLowerCase().trim();
+    let uid = userId || 'user_' + Date.now();
+
+    // Prevent Duplicate Email entries in Firestore users/
+    if (targetEmail) {
+      const existingSnap = await adminDb.collection('users').where('email', '==', targetEmail).get();
+      if (!existingSnap.empty) {
+        uid = existingSnap.docs[0].id;
+        // Purge duplicate docs with same email
+        if (existingSnap.docs.length > 1) {
+          for (let i = 1; i < existingSnap.docs.length; i++) {
+            await adminDb.collection('users').doc(existingSnap.docs[i].id).delete();
+            await adminDb.collection('characters').doc(existingSnap.docs[i].id).delete().catch(() => {});
+          }
+        }
+      }
+    }
 
     // 1. users/ document
     await adminDb.collection('users').doc(uid).set({

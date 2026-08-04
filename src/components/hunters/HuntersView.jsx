@@ -243,10 +243,39 @@ export function HuntersView() {
     (h.email && h.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleAddHunter = (e) => {
+  // Cleanup demo_* data on load
+  useEffect(() => {
+    fetch('/api/ai/cleanup-demo-data', { method: 'POST' }).catch(() => {});
+  }, []);
+
+  const handleAddHunter = async (e) => {
     e.preventDefault();
     if (!newHunterName.trim()) return;
-    addHunter({ name: newHunterName, career: newHunterCareer });
+
+    const target = {
+      id: `h_${Date.now()}`,
+      name: newHunterName.trim(),
+      email: `${newHunterName.trim().toLowerCase().replace(/\s+/g, '')}@system.elite`,
+      rank: 'E-Rank Hunter',
+      level: 1,
+      career: newHunterCareer,
+    };
+
+    addHunter(target);
+
+    try {
+      await fetch('/api/ai/send-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender: currentUser || { uid: character?.id || 'user_local', displayName: character?.name || 'Vekta', email: character?.email || '' },
+          targetHunter: target,
+        })
+      });
+    } catch (err) {
+      console.warn('[Send Connection Error]:', err);
+    }
+
     setNewHunterName('');
     setShowAddModal(false);
   };
