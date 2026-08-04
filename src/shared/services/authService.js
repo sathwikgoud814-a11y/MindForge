@@ -4,7 +4,8 @@ import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  deleteUser
 } from 'firebase/auth';
 import { auth, googleProvider, githubProvider } from '../config/firebase';
 import { syncUserDocument } from './firestoreService';
@@ -95,4 +96,16 @@ export const signOutUser = async () => {
 
 export const onAuthChange = (callback) => {
   return onAuthStateChanged(auth, callback);
+};
+
+export const deleteAccountAuth = async (user) => {
+  const targetUser = user || auth.currentUser;
+  if (targetUser) {
+    try {
+      await deleteUser(targetUser);
+      console.log('[FirebaseAuth] Successfully deleted user credentials from Auth database.');
+    } catch (err) {
+      console.warn('[FirebaseAuth Delete Notice]:', err.message);
+    }
+  }
 };

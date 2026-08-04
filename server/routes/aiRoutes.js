@@ -1,6 +1,6 @@
 import express from 'express';
 import { AIService } from '../services/aiService.js';
-import { adminDb } from '../config/firebaseAdmin.js';
+import { adminDb, adminAuth } from '../config/firebaseAdmin.js';
 
 const router = express.Router();
 
@@ -229,7 +229,85 @@ router.post('/update-duel-score', async (req, res) => {
   }
 });
 
-// POST Cleanup all demo_* documents & merge email duplicates in Firestore
+// POST Delete Account Credentials and Firestore Data permanently
+router.post('/delete-account', async (req, res) => {
+  try {
+    if (!adminDb) {
+      return res.status(500).json({ success: false, error: 'Firebase Admin not initialized' });
+    }
+
+    const { userId, email } = req.body;
+    const targetEmail = (email || '').toLowerCase().trim();
+    let targetUid = userId;
+
+    console.log(`[Delete Account Request] Attempting purge for UID: ${targetUid}, Email: ${targetEmail}`);
+
+    const deletedDocs = [];
+    if (targetEmail) {
+      const usersSnap = await adminDb.collection('users').get();
+      usersSnap.forEach(doc => {
+        const uData = doc.data();
+        if ((uData.email || '').toLowerCase().trim() === targetEmail || doc.id === targetUid) {
+          deletedDocs.push(doc.id);
+        }
+      });
+    } else if (targetUid) {
+      deletedDocs.push(targetUid);
+    }
+
+    // 1. Delete matching documents across all Firestore collections
+    const collections = ['users', 'characters', 'careerTrees', 'duels', 'connections', 'friendRequests', 'notifications'];
+    for (const docId of deletedDocs) {
+      for (const col of collections) {
+        await adminDb.collection(col).doc(docId).delete().catch(() => {});
+        await adminDb.collection(col).doc(`tree_${docId}`).delete().catch(() => {});
+      }
+    }
+
+    // Also delete any duels or connections matching the target email
+    if (targetEmail) {
+      for (const col of ['duels', 'connections', 'friendRequests', 'notifications']) {
+        const snap = await adminDb.collection(col).get();
+        for (const doc of snap.docs) {
+          const str = JSON.stringify(doc.data()).toLowerCase();
+          if (str.includes(targetEmail)) {
+            await adminDb.collection(col).doc(doc.id).delete().catch(() => {});
+          }
+        }
+      }
+    }
+
+    // 2. Delete Firebase Auth User Credentials via Admin SDK
+    if (adminAuth && targetUid && targetUid !== 'user_local') {
+      try {
+        await adminAuth.deleteUser(targetUid);
+        console.log(`[Firebase Admin Auth] Successfully deleted user ${targetUid} from Auth database`);
+      } catch (authErr) {
+        console.warn(`[Firebase Admin Auth Delete Notice]:`, authErr.message);
+      }
+    }
+
+    // Search and delete Auth User by Email if ID was custom
+    if (adminAuth && targetEmail) {
+      try {
+        const userRecord = await adminAuth.getUserByEmail(targetEmail);
+        if (userRecord && userRecord.uid) {
+          await adminAuth.deleteUser(userRecord.uid);
+          console.log(`[Firebase Admin Auth] Successfully deleted user by email ${targetEmail} (${userRecord.uid})`);
+        }
+      } catch (e) {
+        // User record may already be deleted
+      }
+    }
+
+    res.json({ success: true, message: 'Account credentials and database documents permanently deleted' });
+  } catch (err) {
+    console.error('[Delete Account Error]:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST Cleanup all demo_* documents & merge duplicate email entries in Firestore
 router.post('/cleanup-demo-data', async (req, res) => {
   try {
     if (!adminDb) {
@@ -239,6 +317,7 @@ router.post('/cleanup-demo-data', async (req, res) => {
     const collections = ['users', 'characters', 'careerTrees', 'duels', 'connections', 'friendRequests'];
     let deletedCount = 0;
 
+    // 1. Delete all demo documents
     for (const col of collections) {
       const snap = await adminDb.collection(col).get();
       for (const doc of snap.docs) {
@@ -247,28 +326,33 @@ router.post('/cleanup-demo-data', async (req, res) => {
         const strData = JSON.stringify(data).toLowerCase();
 
         if (id.startsWith('demo') || strData.includes('demo_user')) {
-          await adminDb.collection(col).doc(doc.id).delete();
+          await adminDb.collection(col).doc(doc.id).delete().catch(() => {});
           deletedCount++;
         }
       }
     }
 
-    // Merge duplicate email docs in users/ and characters/
+    // 2. Strict Deduplication by Email across users/ and characters/
     const usersSnap = await adminDb.collection('users').get();
-    const emailToDocMap = new Map();
+    const emailToDocIdMap = new Map();
 
     for (const doc of usersSnap.docs) {
       const data = doc.data();
-      const email = (data.email || '').toLowerCase().trim();
+      const rawEmail = data.email || '';
+      const email = rawEmail.toLowerCase().trim();
+
       if (!email) continue;
 
-      if (emailToDocMap.has(email)) {
-        // Delete redundant duplicate doc
-        await adminDb.collection('users').doc(doc.id).delete();
-        await adminDb.collection('characters').doc(doc.id).delete().catch(() => {});
+      if (emailToDocIdMap.has(email)) {
+        // Redundant duplicate document with same email -> DELETE
+        const dupId = doc.id;
+        await adminDb.collection('users').doc(dupId).delete().catch(() => {});
+        await adminDb.collection('characters').doc(dupId).delete().catch(() => {});
+        await adminDb.collection('careerTrees').doc(`tree_${dupId}`).delete().catch(() => {});
         deletedCount++;
+        console.log(`[Deduplication Purge] Deleted duplicate Firestore user document ${dupId} for email ${email}`);
       } else {
-        emailToDocMap.set(email, doc.id);
+        emailToDocIdMap.set(email, doc.id);
       }
     }
 

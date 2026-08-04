@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { ProgressionEngine } from '../shared/services/progressionEngine';
 import { HunterRatingEngine, HUNTER_RANKS } from '../shared/services/hunterRatingEngine';
-import { onAuthChange } from '../shared/services/authService';
+import { onAuthChange, deleteAccountAuth } from '../shared/services/authService';
 import { getDynamicSkillTree } from '../shared/services/careerEngine';
 import {
   saveCharacterProfile,
@@ -207,9 +207,27 @@ export function SystemProvider({ children }) {
     setActiveElapsedMs(3600000);
   };
 
-  const deleteAccountData = () => {
-    localStorage.clear();
-    window.location.reload();
+  const deleteAccountData = async () => {
+    try {
+      const email = currentUser?.email || character?.email || '';
+      const uid = currentUser?.uid || character?.id || '';
+
+      // 1. Call backend server to purge Firestore documents & Firebase Admin Auth credentials
+      await fetch('/api/ai/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: uid, email })
+      }).catch(err => console.warn('[Backend Delete Account Notice]:', err));
+
+      // 2. Delete Firebase Client Auth User
+      await deleteAccountAuth().catch(err => console.warn('[Client Auth Delete Notice]:', err));
+    } catch (err) {
+      console.warn('[Delete Account Error]:', err);
+    } finally {
+      // 3. Clear local storage and reload app to onboarding
+      localStorage.clear();
+      window.location.reload();
+    }
   };
 
   // Dynamic Hunter Rating Calculation & Promotion Trigger
