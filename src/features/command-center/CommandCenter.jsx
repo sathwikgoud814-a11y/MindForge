@@ -18,24 +18,24 @@ export function CommandCenter() {
   const todayProgressPct = safeMissions.length > 0 ? Math.round((completedMissionsCount / safeMissions.length) * 100) : 0;
 
   // Active Target Reward (Find first unredeemed reward)
-  const targetReward = safeRewards.find(r => !r.redeemed) || { name: 'Specialty Espresso Coffee', costDP: 180, category: 'Food' };
-  const currentDP = character?.dp || 160;
-  const dpNeeded = Math.max(0, targetReward.costDP - currentDP);
-  const rewardProgressPct = Math.min(100, Math.round((currentDP / targetReward.costDP) * 100));
+  const targetReward = safeRewards.find(r => !r.redeemed) || safeRewards[0] || null;
+  const currentDP = character?.dp ?? 0;
+  const dpNeeded = targetReward ? Math.max(0, targetReward.costDP - currentDP) : 0;
+  const rewardProgressPct = targetReward && targetReward.costDP > 0 ? Math.min(100, Math.round((currentDP / targetReward.costDP) * 100)) : 0;
   const missionsRemaining = Math.ceil(dpNeeded / 40);
 
   // XP & Level Metrics
-  const level = character?.level ?? 2;
-  const xp = character?.xp ?? 680;
-  const xpToNext = character?.xpToNextLevel ?? 1000;
-  const xpPct = Math.min(100, Math.round((xp / (xpToNext || 1000)) * 100));
+  const level = character?.level ?? 1;
+  const xp = character?.xp ?? 0;
+  const xpToNext = character?.xpToNextLevel ?? 100;
+  const xpPct = Math.min(100, Math.round((xp / (xpToNext || 100)) * 100));
   const recruitProgressPct = Math.min(100, Math.round(((level * 10 + completedMissionsCount * 5) / 100) * 100));
 
-  // Stat Scores
-  const strScore = (safeAttrs.strength?.level || 2) * 10 + 1;
-  const focScore = (safeAttrs.focus?.level || 3) * 10 + 4;
-  const knwScore = (safeAttrs.knowledge?.level || 4) * 10 + 8;
-  const crtScore = (safeAttrs.creativity?.level || 5) * 10 + 5;
+  // Stat Scores directly from actual character attributes
+  const strScore = safeAttrs.strength?.level ?? 1;
+  const focScore = safeAttrs.focus?.level ?? 1;
+  const knwScore = safeAttrs.knowledge?.level ?? 1;
+  const crtScore = safeAttrs.creativity?.level ?? 1;
 
   const handleExecuteMainMission = () => {
     if (!mainMission) return;
@@ -276,26 +276,32 @@ export function CommandCenter() {
             <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
               <div>
                 <span className="text-[10px] font-black text-gold uppercase tracking-wider">Reward Goal Target</span>
-                <h3 className="text-lg font-black text-primary tracking-tight mt-0.5">{targetReward.name}</h3>
+                <h3 className="text-lg font-black text-primary tracking-tight mt-0.5">{targetReward?.name || 'No Active Goal Selected'}</h3>
               </div>
               <span className="material-symbols-outlined text-gold text-2xl">local_cafe</span>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center text-xs font-black">
-                <span className="text-primary-muted">DP Progress</span>
-                <span className="text-primary">{currentDP} / {targetReward.costDP} DP</span>
-              </div>
-              <div className="w-full bg-surface-subtle h-3 rounded-full overflow-hidden border border-border-subtle">
-                <div className="gold-gradient h-full rounded-full transition-all duration-500 progress-glow" style={{ width: `${rewardProgressPct}%` }}></div>
-              </div>
-            </div>
+            {targetReward ? (
+              <>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center text-xs font-black">
+                    <span className="text-primary-muted">DP Progress</span>
+                    <span className="text-primary">{currentDP} / {targetReward.costDP} DP</span>
+                  </div>
+                  <div className="w-full bg-surface-subtle h-3 rounded-full overflow-hidden border border-border-subtle">
+                    <div className="gold-gradient h-full rounded-full transition-all duration-500 progress-glow" style={{ width: `${rewardProgressPct}%` }}></div>
+                  </div>
+                </div>
 
-            <div className="p-3.5 rounded-2xl bg-surface-subtle border border-border-subtle flex items-center justify-between text-xs font-bold">
-              <span className="text-primary-muted">Need:</span>
-              <span className="text-gold font-black">{dpNeeded > 0 ? `${dpNeeded} DP Remaining` : 'Goal Unlocked!'}</span>
-              <span className="text-primary font-bold">({missionsRemaining} Directives)</span>
-            </div>
+                <div className="p-3.5 rounded-2xl bg-surface-subtle border border-border-subtle flex items-center justify-between text-xs font-bold">
+                  <span className="text-primary-muted">Need:</span>
+                  <span className="text-gold font-black">{dpNeeded > 0 ? `${dpNeeded} DP Remaining` : 'Goal Unlocked!'}</span>
+                  <span className="text-primary font-bold">({missionsRemaining} Directives)</span>
+                </div>
+              </>
+            ) : (
+              <p className="text-xs text-primary-muted font-medium">Add custom rewards in the Reward Shop to track your progress!</p>
+            )}
 
             <button
               onClick={() => setActiveTab('shop')}

@@ -2,9 +2,12 @@ import React from 'react';
 import { useSystem } from '../../context/SystemContext';
 
 export function Sidebar() {
-  const { activeTab, setActiveTab, character, setShowCreateMissionModal } = useSystem();
+  const { activeTab, setActiveTab, character } = useSystem();
 
-  const xpPct = Math.min(100, Math.round(((character.xp || 680) / (character.xpToNextLevel || 1000)) * 100));
+  const currentLvl = character?.level ?? 1;
+  const currentXp = character?.xp ?? 0;
+  const currentXpToNext = character?.xpToNextLevel ?? 100;
+  const xpPct = Math.min(100, Math.round((currentXp / (currentXpToNext || 100)) * 100));
 
   const navItems = [
     { id: 'commandCenter', label: 'Command Center', icon: 'dashboard' },
@@ -12,7 +15,7 @@ export function Sidebar() {
     { id: 'planner', label: 'Planner', icon: 'event' },
     { id: 'growth', label: 'Growth Report', icon: 'insights' },
     { id: 'character', label: 'Character', icon: 'person' },
-    { id: 'shop', label: 'Reward Shop', icon: 'shopping_bag', highlight: `${character.dp} DP` },
+    { id: 'shop', label: 'Reward Shop', icon: 'shopping_bag', highlight: `${character?.dp ?? 0} DP` },
     { id: 'hunters', label: 'Hunters', icon: 'shield', badge: 'Arena' },
   ];
 
@@ -27,17 +30,17 @@ export function Sidebar() {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl gold-gradient p-0.5 shadow-sm flex items-center justify-center flex-shrink-0">
             <div className="w-full h-full bg-surface rounded-xl flex items-center justify-center font-black text-lg text-primary">
-              {character.level || 2}
+              {currentLvl}
             </div>
           </div>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5 mb-0.5">
               <span className="text-[9px] font-black px-2 py-0.5 rounded gold-gradient text-white uppercase tracking-wider">
-                {character.rank || 'Recruit'}
+                {character?.rank || 'Recruit Rank'}
               </span>
             </div>
-            <h1 className="text-sm font-extrabold text-primary tracking-tight truncate">System Elite</h1>
-            <p className="text-[11px] font-bold text-gold truncate">{character.archetype || 'Creative Builder'}</p>
+            <h1 className="text-sm font-extrabold text-primary tracking-tight truncate">{character?.name || 'Vekta'}</h1>
+            <p className="text-[11px] font-bold text-gold truncate">{character?.primaryCareer || character?.archetype || 'Creative Builder'}</p>
           </div>
         </div>
 
@@ -45,7 +48,7 @@ export function Sidebar() {
         <div className="flex flex-col gap-1 text-[10px] pt-1 border-t border-border-subtle">
           <div className="flex justify-between font-bold text-primary-muted">
             <span>XP Mastery</span>
-            <span className="text-primary font-black">{character.xp || 680} / {character.xpToNextLevel || 1000}</span>
+            <span className="text-primary font-black">{currentXp} / {currentXpToNext}</span>
           </div>
           <div className="w-full bg-surface-card h-1.5 rounded-full overflow-hidden border border-border-subtle">
             <div className="gold-gradient h-full rounded-full transition-all duration-500 progress-glow" style={{ width: `${xpPct}%` }}></div>
