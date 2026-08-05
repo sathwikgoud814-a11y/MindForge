@@ -116,6 +116,23 @@ export function ActiveDuelView() {
   const isAccepted = d.status === 'active';
   if (!isAccepted) return null;
 
+  const myHandle = (character?.userIdTag || `@${(character?.name || 'hunter').toLowerCase().replace(/[^a-z0-9]/g, '')}`).toLowerCase().trim();
+  const myEmail = (currentUser?.email || '').toLowerCase().trim();
+  const myName = (character?.name || '').toLowerCase().trim();
+  const myUid = currentUser?.uid || '';
+
+  const chHandle = (d.challengerHandle || '').toLowerCase().trim();
+  const chEmail = (d.challengerEmail || '').toLowerCase().trim();
+  const chName = (d.challengerName || '').toLowerCase().trim();
+  const chId = d.challengerId || '';
+
+  const isChallenger = (chHandle && chHandle === myHandle) ||
+    (chEmail && myEmail && chEmail === myEmail) ||
+    (chId && myUid && chId === myUid) ||
+    (chName && chName === myName);
+
+  const myIdentifier = myHandle || myUid || myName;
+
   const categoryMissions = d.duelMissions && d.duelMissions.length > 0
     ? d.duelMissions
     : getDuelCategoryPredefinedMissions(d.category);
@@ -153,16 +170,36 @@ export function ActiveDuelView() {
   const handleExecuteDuelMission = (missionId, missionName) => {
     const updatedUserScore = userPts + 100;
     const updatedMissionsCount = (d.userMissions || 0) + 1;
-    const newLeader = updatedUserScore >= oppPts ? character.name : d.opponent.name;
 
-    const updatedMissionsList = categoryMissions.map(m =>
-      m.id === missionId ? { ...m, completed: true } : m
-    );
+    const newChallengerScore = isChallenger ? updatedUserScore : oppPts;
+    const newOpponentScore = isChallenger ? oppPts : updatedUserScore;
+
+    const newChallengerMissions = isChallenger ? updatedMissionsCount : (d.opponentMissions || 0);
+    const newOpponentMissions = isChallenger ? (d.opponentMissions || 0) : updatedMissionsCount;
+
+    const newLeader = newChallengerScore >= newOpponentScore
+      ? (d.challengerName || character?.name || 'Challenger')
+      : (d.opponentName || 'Opponent');
+
+    const updatedMissionsList = categoryMissions.map(m => {
+      if (m.id === missionId) {
+        const prevExecuted = Array.isArray(m.executedBy) ? m.executedBy : [];
+        const newExecuted = Array.from(new Set([...prevExecuted, myIdentifier]));
+        return {
+          ...m,
+          executedBy: newExecuted,
+          completedByChallenger: isChallenger ? true : (m.completedByChallenger || false),
+          completedByOpponent: !isChallenger ? true : (m.completedByOpponent || false),
+          completed: newExecuted.length >= 2,
+        };
+      }
+      return m;
+    });
 
     const nowIso = new Date().toISOString();
     const newFeedItem = {
       id: 'lf_' + Date.now(),
-      hunterName: character.name,
+      hunterName: character?.name || 'Hunter',
       text: `Executed ${d.category} duel mission "${missionName}" (+100 PTS)`,
       timestamp: nowIso,
       time: formatLiveFeedTime(nowIso),
@@ -180,11 +217,13 @@ export function ActiveDuelView() {
     if (typeof setViewingDuel === 'function') setViewingDuel(updatedDuel);
     if (typeof setActiveDuels === 'function') setActiveDuels(prev => (prev || []).map(item => item.id === d.id ? updatedDuel : item));
 
-    // Persist score update directly to Firestore `duels/` collection
+    // Persist score update directly to Firestore `duels/` collection with correct challenger vs opponent fields
     if (d.id) {
       updateDoc(doc(db, 'duels', d.id), {
-        userScore: updatedUserScore,
-        userMissions: updatedMissionsCount,
+        userScore: newChallengerScore,
+        opponentScore: newOpponentScore,
+        userMissions: newChallengerMissions,
+        opponentMissions: newOpponentMissions,
         currentLeader: newLeader,
         duelMissions: updatedMissionsList,
         liveFeed: [newFeedItem, ...(d.liveFeed || [])],
@@ -211,6 +250,7 @@ export function ActiveDuelView() {
       difficulty: customMissionDifficulty,
       xpReward: customMissionDifficulty === 'S-Rank' ? 150 : 100,
       dpReward: customMissionDifficulty === 'S-Rank' ? 75 : 50,
+      executedBy: [],
       completed: false,
     };
 
@@ -238,11 +278,20 @@ export function ActiveDuelView() {
   const handleLogTask = (pts, text) => {
     const updatedUserScore = userPts + pts;
     const updatedMissions = (d.userMissions || 0) + 1;
-    const newLeader = updatedUserScore >= oppPts ? character.name : d.opponent.name;
+
+    const newChallengerScore = isChallenger ? updatedUserScore : oppPts;
+    const newOpponentScore = isChallenger ? oppPts : updatedUserScore;
+
+    const newChallengerMissions = isChallenger ? updatedMissions : (d.opponentMissions || 0);
+    const newOpponentMissions = isChallenger ? (d.opponentMissions || 0) : updatedMissions;
+
+    const newLeader = newChallengerScore >= newOpponentScore
+      ? (d.challengerName || character?.name || 'Challenger')
+      : (d.opponentName || 'Opponent');
 
     const newFeedItem = {
       id: 'lf_' + Date.now(),
-      hunterName: character.name,
+      hunterName: character?.name || 'Hunter',
       text: `${text || 'Completed directive'} (+${pts} PTS)`,
       time: 'Just now',
     };
@@ -260,8 +309,10 @@ export function ActiveDuelView() {
 
     if (d.id) {
       updateDoc(doc(db, 'duels', d.id), {
-        userScore: updatedUserScore,
-        userMissions: updatedMissions,
+        userScore: newChallengerScore,
+        opponentScore: newOpponentScore,
+        userMissions: newChallengerMissions,
+        opponentMissions: newOpponentMissions,
         currentLeader: newLeader,
         liveFeed: [newFeedItem, ...(d.liveFeed || [])],
         updatedAt: new Date().toISOString(),
@@ -275,11 +326,20 @@ export function ActiveDuelView() {
   const handleLogFocusHour = () => {
     const updatedUserScore = userPts + 50;
     const updatedFocusHours = (d.userFocusHours || 0) + 1;
-    const newLeader = updatedUserScore >= oppPts ? character.name : d.opponent.name;
+
+    const newChallengerScore = isChallenger ? updatedUserScore : oppPts;
+    const newOpponentScore = isChallenger ? oppPts : updatedUserScore;
+
+    const newChallengerFocus = isChallenger ? updatedFocusHours : (d.opponentFocusHours || 0);
+    const newOpponentFocus = isChallenger ? (d.opponentFocusHours || 0) : updatedFocusHours;
+
+    const newLeader = newChallengerScore >= newOpponentScore
+      ? (d.challengerName || character?.name || 'Challenger')
+      : (d.opponentName || 'Opponent');
 
     const newFeedItem = {
       id: 'lf_' + Date.now(),
-      hunterName: character.name,
+      hunterName: character?.name || 'Hunter',
       text: `Logged 1-Hour Focus Work Session (+50 PTS)`,
       time: 'Just now',
     };
@@ -297,8 +357,10 @@ export function ActiveDuelView() {
 
     if (d.id) {
       updateDoc(doc(db, 'duels', d.id), {
-        userScore: updatedUserScore,
-        userFocusHours: updatedFocusHours,
+        userScore: newChallengerScore,
+        opponentScore: newOpponentScore,
+        userFocusHours: newChallengerFocus,
+        opponentFocusHours: newOpponentFocus,
         currentLeader: newLeader,
         liveFeed: [newFeedItem, ...(d.liveFeed || [])],
         updatedAt: new Date().toISOString(),
@@ -418,44 +480,50 @@ export function ActiveDuelView() {
         </div>
 
         <div className="flex flex-col gap-3">
-          {categoryMissions.map(m => (
-            <div
-              key={m.id}
-              className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
-                m.completed ? 'bg-surface-subtle/50 border-border-subtle opacity-75' : 'bg-surface-subtle border-border-subtle hover:border-gold/40'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${m.completed ? 'bg-emerald-500' : 'bg-gold'}`}></div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-extrabold px-2 py-0.5 rounded bg-primary text-white uppercase">{m.difficulty}</span>
-                    <h4 className={`font-extrabold text-sm ${m.completed ? 'line-through text-primary-muted' : 'text-primary'}`}>
-                      {m.name}
-                    </h4>
-                  </div>
-                  <span className="text-[10px] text-primary-muted font-bold mt-0.5 block">
-                    Reward: +100 Duel PTS • +{m.xpReward || 100} System XP • +{m.dpReward || 50} DP
-                  </span>
-                </div>
-              </div>
+          {categoryMissions.map(m => {
+            const isExecutedByMe = Array.isArray(m.executedBy)
+              ? m.executedBy.includes(myIdentifier)
+              : (isChallenger ? m.completedByChallenger : m.completedByOpponent);
 
-              {m.completed ? (
-                <span className="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 font-extrabold text-xs border border-emerald-200 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">check_circle</span>
-                  Executed ✓
-                </span>
-              ) : (
-                <button
-                  onClick={() => handleExecuteDuelMission(m.id, m.name)}
-                  className="px-5 py-2.5 rounded-xl gold-gradient text-white font-extrabold text-xs shadow-md hover:scale-105 transition-transform flex items-center gap-1.5"
-                >
-                  <span className="material-symbols-outlined text-base">task_alt</span>
-                  Execute Mission (+100 PTS)
-                </button>
-              )}
-            </div>
-          ))}
+            return (
+              <div
+                key={m.id}
+                className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
+                  isExecutedByMe ? 'bg-surface-subtle/50 border-border-subtle opacity-75' : 'bg-surface-subtle border-border-subtle hover:border-gold/40'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-3 h-3 rounded-full ${isExecutedByMe ? 'bg-emerald-500' : 'bg-gold'}`}></div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-extrabold px-2 py-0.5 rounded bg-primary text-white uppercase">{m.difficulty}</span>
+                      <h4 className={`font-extrabold text-sm ${isExecutedByMe ? 'line-through text-primary-muted' : 'text-primary'}`}>
+                        {m.name}
+                      </h4>
+                    </div>
+                    <span className="text-[10px] text-primary-muted font-bold mt-0.5 block">
+                      Reward: +100 Duel PTS • +{m.xpReward || 100} System XP • +{m.dpReward || 50} DP
+                    </span>
+                  </div>
+                </div>
+
+                {isExecutedByMe ? (
+                  <span className="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 font-extrabold text-xs border border-emerald-200 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">check_circle</span>
+                    Executed ✓
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => handleExecuteDuelMission(m.id, m.name)}
+                    className="px-5 py-2.5 rounded-xl gold-gradient text-white font-extrabold text-xs shadow-md hover:scale-105 transition-transform flex items-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-base">task_alt</span>
+                    Execute Mission (+100 PTS)
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 
