@@ -45,7 +45,7 @@ export function getDuelCategoryPredefinedMissions(category = 'All Missions') {
 }
 
 export function ActiveDuelView() {
-  const { viewingDuel, setViewingDuel, character, endDuel, setActiveDuels, missions, completeMission } = useSystem();
+  const { viewingDuel, setViewingDuel, character, currentUser, endDuel, setActiveDuels, missions, completeMission } = useSystem();
   const [taskNote, setTaskNote] = useState('');
   const [showLogModal, setShowLogModal] = useState(false);
 
