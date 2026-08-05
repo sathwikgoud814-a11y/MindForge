@@ -47,6 +47,9 @@ const formatAuthError = (err) => {
   if (code === 'auth/configuration-not-found' || message.includes('configuration-not-found')) {
     return 'Firebase Authentication is not enabled in Firebase Console. Please visit Console > Build > Authentication.';
   }
+  if (code === 'auth/argument-error' || message.includes('argument-error')) {
+    return 'Invalid authentication parameter provided. Please try logging in again.';
+  }
 
   return `${code ? `[${code}]: ` : ''}${message || 'Authentication failed. Please verify your credentials.'}`;
 };
