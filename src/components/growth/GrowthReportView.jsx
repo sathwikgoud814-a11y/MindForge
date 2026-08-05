@@ -12,14 +12,52 @@ export function GrowthReportView() {
   const allCareerSkills = [...(activeTree.core || []), ...(activeTree.related || []), ...(activeTree.advanced || [])];
   const allSkills = [...allCareerSkills, ...(customSkills || [])];
 
+  const xp = safeChar.xp || 0;
+  const level = safeChar.level || 0;
+  const missionsCount = safeChar.completedMissionsCount || 0;
+  const streak = safeChar.streakDays || 1;
+  const career = safeChar.primaryCareer || 'UI/UX Designer';
+  const destiny = safeChar.destinyIdentity || 'Build SaaS Startup';
+  const archetype = safeChar.archetype || 'Creative Builder';
+  const rank = safeChar.rank || 'Recruit Rank';
+  const strongest = safeChar.strongestTraits && safeChar.strongestTraits.length > 0 ? safeChar.strongestTraits : ['Creativity', 'Curiosity'];
+  const weakest = safeChar.weakestTraits && safeChar.weakestTraits.length > 0 ? safeChar.weakestTraits : ['Consistency', 'Focus'];
+
+  // Tailored System Primary Evaluation String
+  const getPrimaryEvaluation = () => {
+    if (missionsCount >= 15 || level >= 5) {
+      return `"System throughput peak. ${safeChar.name || 'Hunter'} is advancing rapidly as a ${career}."`;
+    }
+    if (missionsCount >= 5 || level >= 2) {
+      return `"Momentum building. Trajectory firmly aligned toward '${destiny}'."`;
+    }
+    return `"Awakening phase in progress. Execute primary directives to trigger initial power spike."`;
+  };
+
+  // Dynamic Trajectory Grade Calculation
+  const getTrajectoryGrade = () => {
+    if (missionsCount >= 20 && streak >= 7) return { grade: 'S-RANK', label: 'Overcoming Baseline', color: 'text-amber-500 bg-amber-50 border-amber-200' };
+    if (missionsCount >= 10 || level >= 3) return { grade: 'A-RANK', label: 'High Velocity', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' };
+    if (missionsCount >= 3 || level >= 1) return { grade: 'B-RANK', label: 'Steady Growth', color: 'text-blue-600 bg-blue-50 border-blue-200' };
+    return { grade: 'RECRUIT', label: 'Baseline Initialization', color: 'text-gold bg-gold-light/60 border-gold/40' };
+  };
+
+  // Highest Leverage Action tailored to character career and weaknesses
+  const getHighestLeverageAction = () => {
+    const mainWeakness = weakest[0] || 'Focus';
+    return `Deploy 2 consecutive 45-minute ${career} directives focused on ${mainWeakness} to unlock your next skill level.`;
+  };
+
+  const trajectoryGrade = getTrajectoryGrade();
+
   const xpTrendData = dailyXpHistory && dailyXpHistory.length > 0 ? dailyXpHistory : [
-    { day: 'Mon', xp: Math.round((safeChar.xp || 120) * 0.15) },
-    { day: 'Tue', xp: Math.round((safeChar.xp || 120) * 0.3) },
-    { day: 'Wed', xp: Math.round((safeChar.xp || 120) * 0.45) },
-    { day: 'Thu', xp: Math.round((safeChar.xp || 120) * 0.6) },
-    { day: 'Fri', xp: Math.round((safeChar.xp || 120) * 0.75) },
-    { day: 'Sat', xp: Math.round((safeChar.xp || 120) * 0.9) },
-    { day: 'Sun', xp: safeChar.xp || 120 },
+    { day: 'Mon', xp: Math.round(xp * 0.15) },
+    { day: 'Tue', xp: Math.round(xp * 0.3) },
+    { day: 'Wed', xp: Math.round(xp * 0.45) },
+    { day: 'Thu', xp: Math.round(xp * 0.6) },
+    { day: 'Fri', xp: Math.round(xp * 0.75) },
+    { day: 'Sat', xp: Math.round(xp * 0.9) },
+    { day: 'Sun', xp },
   ];
 
   return (
@@ -35,8 +73,8 @@ export function GrowthReportView() {
         </div>
 
         <div className="bg-gold-light/60 px-5 py-3 rounded-2xl border border-gold/30 text-center shadow-sm">
-          <span className="text-[10px] font-bold text-gold uppercase tracking-wider">Primary Evaluation</span>
-          <h3 className="text-base font-black text-primary">"Yes. You are becoming stronger."</h3>
+          <span className="text-[10px] font-bold text-gold uppercase tracking-wider">Primary System Evaluation</span>
+          <h3 className="text-base font-black text-primary">{getPrimaryEvaluation()}</h3>
         </div>
       </div>
 
@@ -57,6 +95,53 @@ export function GrowthReportView() {
         <div className="p-4 rounded-2xl bg-surface-subtle border border-border-subtle flex flex-col">
           <span className="text-[10px] font-bold text-primary-muted uppercase">Completed Directives</span>
           <h3 className="text-2xl font-black text-emerald-600">{safeChar.completedMissionsCount || 0}</h3>
+        </div>
+      </div>
+
+      {/* Tailored AI System Telemetry Diagnostics Card */}
+      <div className="apple-card p-6 border-2 border-gold/40 bg-gold-light/20 flex flex-col gap-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border-subtle">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-gold">analytics</span>
+              <h3 className="text-base font-black text-primary uppercase tracking-wider">
+                Tailored AI System Telemetry & Diagnostics
+              </h3>
+            </div>
+            <p className="text-xs text-primary-muted mt-0.5">Real-time dynamic analysis based on your active career, destiny goals, and attribute stats.</p>
+          </div>
+
+          <div className={`px-4 py-2 rounded-2xl border font-black text-xs flex items-center gap-2 ${trajectoryGrade.color}`}>
+            <span className="material-symbols-outlined text-base">verified</span>
+            <span>{trajectoryGrade.grade} • {trajectoryGrade.label}</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div className="p-4 rounded-2xl bg-surface-card border border-border-subtle flex flex-col gap-1.5">
+            <span className="font-extrabold text-primary-muted uppercase text-[10px]">Archetype & Rank</span>
+            <h4 className="font-black text-sm text-primary">{archetype}</h4>
+            <span className="text-[11px] font-bold text-gold">{rank} (Level {level})</span>
+            <span className="text-[10px] text-primary-muted mt-1 font-medium">Specialization: {career}</span>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-surface-card border border-border-subtle flex flex-col gap-1.5">
+            <span className="font-extrabold text-primary-muted uppercase text-[10px]">Active Trajectory Strengths</span>
+            <div className="flex flex-wrap gap-1 mt-0.5">
+              {strongest.map((t, idx) => (
+                <span key={idx} className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-200">
+                  ✓ {t}
+                </span>
+              ))}
+            </div>
+            <span className="text-[10px] text-primary-muted mt-1 font-medium">Destiny Target: {destiny}</span>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-surface-card border border-border-subtle flex flex-col gap-1.5">
+            <span className="font-extrabold text-gold uppercase text-[10px]">Highest Leverage Action</span>
+            <p className="text-xs font-bold text-primary leading-relaxed">{getHighestLeverageAction()}</p>
+            <span className="text-[10px] text-primary-muted font-medium mt-1">Growth Area Focus: {weakest.join(', ')}</span>
+          </div>
         </div>
       </div>
 

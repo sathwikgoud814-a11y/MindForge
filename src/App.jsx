@@ -6,15 +6,30 @@ import { Footer } from './components/layout/Footer';
 import { SkeletonLoader } from './shared/components/SkeletonLoader';
 import { OnboardingFlow } from './features/onboarding/OnboardingFlow';
 
-// Lazy Loaded Feature Pages
-const CommandCenter = lazy(() => import('./features/command-center/CommandCenter').then(m => ({ default: m.CommandCenter })));
-const MissionsView = lazy(() => import('./components/missions/MissionsView').then(m => ({ default: m.MissionsView })));
-const PlannerView = lazy(() => import('./components/planner/PlannerView').then(m => ({ default: m.PlannerView })));
-const GrowthReportView = lazy(() => import('./components/growth/GrowthReportView').then(m => ({ default: m.GrowthReportView })));
-const CharacterView = lazy(() => import('./components/character/CharacterView').then(m => ({ default: m.CharacterView })));
-const RewardShopModal = lazy(() => import('./components/shop/RewardShopModal').then(m => ({ default: m.RewardShopModal })));
-const HuntersView = lazy(() => import('./components/hunters/HuntersView').then(m => ({ default: m.HuntersView })));
-const ActiveDuelView = lazy(() => import('./components/hunters/ActiveDuelView').then(m => ({ default: m.ActiveDuelView })));
+// Helper to safely handle dynamic import chunk failures during new deployments
+function safeLazy(importFn) {
+  return lazy(() =>
+    importFn().catch((err) => {
+      console.warn('[Dynamic Import Notice]: New deployment asset chunk detected. Refreshing for latest version...', err);
+      const reloaded = sessionStorage.getItem('solo_chunk_reloaded');
+      if (!reloaded) {
+        sessionStorage.setItem('solo_chunk_reloaded', 'true');
+        window.location.reload();
+      }
+      return { default: () => <SkeletonLoader /> };
+    })
+  );
+}
+
+// Lazy Loaded Feature Pages with Deployment Chunk Resilience
+const CommandCenter = safeLazy(() => import('./features/command-center/CommandCenter').then(m => ({ default: m.CommandCenter })));
+const MissionsView = safeLazy(() => import('./components/missions/MissionsView').then(m => ({ default: m.MissionsView })));
+const PlannerView = safeLazy(() => import('./components/planner/PlannerView').then(m => ({ default: m.PlannerView })));
+const GrowthReportView = safeLazy(() => import('./components/growth/GrowthReportView').then(m => ({ default: m.GrowthReportView })));
+const CharacterView = safeLazy(() => import('./components/character/CharacterView').then(m => ({ default: m.CharacterView })));
+const RewardShopModal = safeLazy(() => import('./components/shop/RewardShopModal').then(m => ({ default: m.RewardShopModal })));
+const HuntersView = safeLazy(() => import('./components/hunters/HuntersView').then(m => ({ default: m.HuntersView })));
+const ActiveDuelView = safeLazy(() => import('./components/hunters/ActiveDuelView').then(m => ({ default: m.ActiveDuelView })));
 
 import { PublicCharacterModal } from './components/hunters/PublicCharacterModal';
 import { HunterCompareModal } from './components/hunters/HunterCompareModal';
