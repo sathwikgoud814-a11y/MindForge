@@ -454,7 +454,7 @@ export function SystemProvider({ children }) {
   };
 
   const completeOnboarding = (onboardingData) => {
-    const { name, career, destinyIdentity, destinyGoals, rewardsList, archetype, strongestTraits, weakestTraits } = onboardingData;
+    const { name, userIdTag, career, destinyIdentity, destinyGoals, rewardsList, archetype, strongestTraits, weakestTraits } = onboardingData;
 
     const finalCareer = career || 'UI/UX Designer';
     const finalDestiny = destinyIdentity || 'Build SaaS Startup';
@@ -477,12 +477,16 @@ export function SystemProvider({ children }) {
       progress: 0,
     }));
 
-    const generatedHandle = `@${(name || 'hunter').toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+    const cleanUserTag = userIdTag?.trim();
+    const finalHandle = cleanUserTag
+      ? (cleanUserTag.startsWith('@') ? cleanUserTag : `@${cleanUserTag}`)
+      : `@${(name || 'hunter').toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+
     const newChar = {
       id: userId,
       name: name || 'Vekta',
-      userIdTag: generatedHandle,
-      email: onboardingData?.email || '',
+      userIdTag: finalHandle,
+      email: onboardingData?.email || currentUser?.email || '',
       primaryCareer: finalCareer,
       secondaryCareers: [],
       archetype: finalArchetype,

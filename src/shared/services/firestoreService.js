@@ -56,9 +56,12 @@ export const syncUserDocument = async (user) => {
 export const saveCharacterProfile = async (userId, characterData) => {
   try {
     const charRef = doc(db, 'characters', userId);
+    const userRef = doc(db, 'users', userId);
+    const handleTag = characterData.userIdTag || `@${(characterData.name || 'hunter').toLowerCase().replace(/[^a-z0-9]/g, '')}`;
     const data = {
       userId,
       characterName: characterData.name || 'Vekta',
+      userIdTag: handleTag,
       rank: characterData.rank || 'Recruit',
       level: characterData.level ?? 0,
       xp: characterData.xp ?? 0,
@@ -70,6 +73,17 @@ export const saveCharacterProfile = async (userId, characterData) => {
       updatedAt: new Date().toISOString(),
     };
     await setDoc(charRef, data, { merge: true });
+    await setDoc(userRef, {
+      uid: userId,
+      name: characterData.name,
+      displayName: characterData.name,
+      userIdTag: handleTag,
+      handle: handleTag,
+      career: characterData.primaryCareer,
+      rank: characterData.rank,
+      level: characterData.level,
+      xp: characterData.xp,
+    }, { merge: true });
   } catch (err) {
     console.warn('[Client Save Character Warning]:', err.message);
     // Fallback to Express Firebase Admin API
