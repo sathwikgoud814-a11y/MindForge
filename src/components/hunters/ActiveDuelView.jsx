@@ -146,9 +146,11 @@ export function ActiveDuelView() {
     }
 
     // Also complete matching main system mission if available
-    const mainM = (missions || []).find(m => m.name.toLowerCase().includes(missionName.toLowerCase()));
-    if (mainM && !mainM.completed) {
-      completeMission(mainM.id);
+    if (missions && Array.isArray(missions) && typeof completeMission === 'function') {
+      const mainM = missions.find(m => m.name && m.name.toLowerCase().includes(missionName.toLowerCase()));
+      if (mainM && !mainM.completed) {
+        completeMission(mainM.id);
+      }
     }
   };
 
