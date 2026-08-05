@@ -38,6 +38,7 @@ export function HuntersView() {
         const myEmail = (currentUser?.email || '').toLowerCase();
         const myName = (character?.name || '').toLowerCase();
         const myUid = currentUser?.uid || '';
+        const myHandle = (character?.userIdTag || `@${(character?.name || 'hunter').toLowerCase().replace(/[^a-z0-9]/g, '')}`).toLowerCase();
 
         const dedupMap = new Map();
         snap.forEach(docSnap => {
@@ -45,15 +46,18 @@ export function HuntersView() {
           const hEmail = (h.email || '').toLowerCase();
           const hName = (h.displayName || h.name || '').toLowerCase();
           const hUid = h.uid || docSnap.id;
+          const hHandle = (h.userIdTag || h.handle || `@${hName.replace(/[^a-z0-9]/g, '')}`).toLowerCase();
           if (hEmail.includes('@system.elite')) return;
           if (myUid && hUid === myUid) return;
           if (myEmail && hEmail === myEmail) return;
           if (myName && hName === myName) return;
-          const key = hName || hUid;
+          if (myHandle && hHandle === myHandle) return;
+          const key = hHandle || hName || hUid;
           if (!dedupMap.has(key)) {
             dedupMap.set(key, {
               id: hUid,
               name: h.displayName || h.name || 'Hunter',
+              handle: h.userIdTag || h.handle || `@${(h.displayName || h.name || 'hunter').toLowerCase().replace(/[^a-z0-9]/g, '')}`,
               email: h.email || '',
               avatar: h.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${hUid}`,
               rank: h.rank || 'Recruit Rank',
@@ -82,7 +86,8 @@ export function HuntersView() {
       const email = (currentUser?.email || '').toLowerCase().trim();
       const uid = currentUser?.uid || '';
       const charName = (character?.name || '').toLowerCase().trim();
-      if (!email && !uid) return;
+      const myHandle = (character?.userIdTag || `@${(character?.name || 'hunter').toLowerCase().replace(/[^a-z0-9]/g, '')}`).toLowerCase().trim();
+      if (!email && !uid && !myHandle) return;
 
       try {
         const snap = await getDocs(collection(db, 'duels'));
@@ -97,18 +102,21 @@ export function HuntersView() {
           const oppEmail = (d.opponentEmail || '').toLowerCase().trim();
           const chName = (d.challengerName || '').toLowerCase().trim();
           const oppName = (d.opponentName || '').toLowerCase().trim();
+          const chHandle = (d.challengerHandle || '').toLowerCase().trim();
+          const oppHandle = (d.opponentHandle || '').toLowerCase().trim();
 
-          const isInvolved = chEmail === email || oppEmail === email ||
+          const isInvolved = (chHandle && chHandle === myHandle) || (oppHandle && oppHandle === myHandle) ||
+            chEmail === email || oppEmail === email ||
             d.challengerId === uid || d.opponentId === uid ||
             (charName && (chName.includes(charName) || oppName.includes(charName)));
 
           if (!isInvolved) return;
 
           if (d.status === 'pending') {
-            const isOpponent = oppEmail === email || d.opponentId === uid || (charName && oppName.includes(charName));
+            const isOpponent = (oppHandle && oppHandle === myHandle) || oppEmail === email || d.opponentId === uid || (charName && oppName.includes(charName));
             if (isOpponent) pending.push(d);
           } else if (d.status === 'active') {
-            const isChallenger = chEmail === email || d.challengerId === uid || (charName && chName.includes(charName));
+            const isChallenger = (chHandle && chHandle === myHandle) || chEmail === email || d.challengerId === uid || (charName && chName.includes(charName));
             activeServerDuels.push({
               id: d.id,
               opponent: {
@@ -241,22 +249,27 @@ export function HuntersView() {
   const safeRequests = friendRequests || [];
   const safeDuels = activeDuels || [];
 
-  const filteredHunters = allHunters.filter(h =>
-    h.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    h.career.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (h.email && h.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredHunters = allHunters.filter(h => {
+    const term = searchTerm.toLowerCase().trim();
+    return (
+      h.name.toLowerCase().includes(term) ||
+      h.career.toLowerCase().includes(term) ||
+      (h.handle && h.handle.toLowerCase().includes(term)) ||
+      (h.email && h.email.toLowerCase().includes(term))
+    );
+  });
 
   // Demo cleanup is handled automatically on server startup
 
   const handleAddHunter = async (e) => {
     e.preventDefault();
-    if (!newHunterName.trim()) return;
-
+    const cleanName = newHunterName.trim();
+    const handleTag = cleanName.startsWith('@') ? cleanName : `@${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
     const target = {
       id: `h_${Date.now()}`,
-      name: newHunterName.trim(),
-      email: `${newHunterName.trim().toLowerCase().replace(/\s+/g, '')}@system.elite`,
+      name: cleanName.replace(/^@/, ''),
+      handle: handleTag,
+      email: `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '')}@system.elite`,
       rank: 'E-Rank Hunter',
       level: 1,
       career: newHunterCareer,
@@ -268,9 +281,11 @@ export function HuntersView() {
       await addDoc(collection(db, 'connections'), {
         senderId: currentUser?.uid || character?.id || 'user_local',
         senderName: character?.name || 'Vekta',
+        senderHandle: character?.userIdTag || `@${(character?.name || 'hunter').toLowerCase().replace(/[^a-z0-9]/g, '')}`,
         senderEmail: currentUser?.email || character?.email || '',
         targetId: target.id,
         targetName: target.name,
+        targetHandle: target.handle,
         targetEmail: target.email,
         status: 'pending',
         createdAt: new Date().toISOString(),
@@ -540,6 +555,7 @@ export function HuntersView() {
                       <span className="text-xs font-semibold text-primary-muted">Lvl {h.level}</span>
                     </div>
                     <h4 className="font-extrabold text-base text-primary mt-0.5">{h.name}</h4>
+                    {h.handle && <p className="text-xs font-mono font-bold text-gold">{h.handle}</p>}
                     <p className="text-xs text-primary-muted font-medium">{h.career}</p>
                     {h.email && <p className="text-[10px] text-primary-muted/70 font-mono mt-0.5">{h.email}</p>}
                   </div>

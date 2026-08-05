@@ -41,8 +41,10 @@ export function CharacterView() {
   const [enabledCalendars, setEnabledCalendars] = useState(privateCalendarSettings?.enabledCalendars || ['national_in']);
   const [calendarSaved, setCalendarSaved] = useState(false);
 
+  // Handle is permanent — read from stored userIdTag, never regenerate from current name
   const userTag = safeChar.userIdTag || `@${(safeChar.name || 'hunter').toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-  const userEmail = currentUser?.email || safeChar.email || `${(safeChar.name || 'hunter').toLowerCase().replace(/[^a-z0-9]/g, '')}@system.elite`;
+  // Always show the real Firebase-authenticated email, never generate a fake one
+  const userEmail = currentUser?.email || safeChar.email || null;
 
   const handleSaveName = (e) => {
     e.preventDefault();
@@ -426,8 +428,11 @@ export function CharacterView() {
           {/* Email Address */}
           <div className="p-5 rounded-2xl bg-surface-subtle border border-border-subtle flex flex-col gap-2">
             <span className="font-extrabold text-primary uppercase text-[10px]">Linked Email Address</span>
-            <span className="font-black text-primary text-sm font-mono">{userEmail}</span>
-            <span className="text-[10px] text-primary-muted">Authenticated via Firebase System Auth</span>
+            {userEmail
+              ? <span className="font-black text-primary text-sm font-mono">{userEmail}</span>
+              : <span className="text-[11px] text-primary-muted italic">No email linked — signed in anonymously or via handle</span>
+            }
+            <span className="text-[10px] text-primary-muted">Authenticated via Firebase · Email is read-only</span>
           </div>
 
           {/* System Control Actions */}

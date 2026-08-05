@@ -185,7 +185,12 @@ export function SystemProvider({ children }) {
 
   const updateCharacterName = (newName) => {
     if (!newName.trim()) return;
-    const updated = { ...character, name: newName.trim() };
+    // Preserve the locked handle — never regenerate it from the new name
+    const updated = {
+      ...character,
+      name: newName.trim(),
+      userIdTag: character.userIdTag || `@${(character.name || 'hunter').toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+    };
     setCharacter(updated);
     localStorage.setItem('solo_character', JSON.stringify(updated));
   };
@@ -472,9 +477,12 @@ export function SystemProvider({ children }) {
       progress: 0,
     }));
 
+    const generatedHandle = `@${(name || 'hunter').toLowerCase().replace(/[^a-z0-9]/g, '')}`;
     const newChar = {
       id: userId,
       name: name || 'Vekta',
+      userIdTag: generatedHandle,
+      email: onboardingData?.email || '',
       primaryCareer: finalCareer,
       secondaryCareers: [],
       archetype: finalArchetype,
@@ -949,9 +957,11 @@ export function SystemProvider({ children }) {
     addDoc(collection(db, 'duels'), {
       challengerId: currentUser?.uid || character.id || 'user_local',
       challengerName: character.name,
+      challengerHandle: character.userIdTag || `@${(character.name || 'hunter').toLowerCase().replace(/[^a-z0-9]/g, '')}`,
       challengerEmail: currentUser?.email || '',
       opponentId: opponent.id || '',
       opponentName: opponent.name,
+      opponentHandle: opponent.handle || opponent.userIdTag || `@${(opponent.name || 'hunter').toLowerCase().replace(/[^a-z0-9]/g, '')}`,
       opponentEmail: opponent.email || '',
       duration,
       category,
