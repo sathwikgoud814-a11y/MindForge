@@ -135,6 +135,7 @@ export function HuntersView() {
               userMissions: isChallenger ? (d.userMissions || 0) : (d.opponentMissions || 0),
               opponentMissions: isChallenger ? (d.opponentMissions || 0) : (d.userMissions || 0),
               currentLeader: d.currentLeader || character?.name || 'Vekta',
+              duelMissions: d.duelMissions || [],
               liveFeed: d.liveFeed || [],
               createdAt: d.createdAt || new Date().toISOString(),
             });

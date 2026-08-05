@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../shared/config/firebase';
 import { useSystem } from '../../context/SystemContext';
 import { formatLiveFeedTime } from '../../shared/utils/timeUtils';
@@ -61,6 +61,52 @@ export function ActiveDuelView() {
     const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Real-Time Live Sync Listener with Firestore: Syncs score, custom duel missions, & feed live between opponent screens
+  const duelDocId = viewingDuel?.id;
+  const currentUid = currentUser?.uid;
+  const currentCharName = character?.name;
+
+  useEffect(() => {
+    if (!duelDocId) return;
+    const unsub = onSnapshot(doc(db, 'duels', duelDocId), (snap) => {
+      if (snap.exists()) {
+        const serverData = snap.data();
+        const myHandle = (character?.userIdTag || `@${(character?.name || 'hunter').toLowerCase().replace(/[^a-z0-9]/g, '')}`).toLowerCase().trim();
+        const myEmail = (currentUser?.email || '').toLowerCase().trim();
+        const myName = (character?.name || '').toLowerCase().trim();
+
+        const chHandle = (serverData.challengerHandle || '').toLowerCase().trim();
+        const chEmail = (serverData.challengerEmail || '').toLowerCase().trim();
+        const chName = (serverData.challengerName || '').toLowerCase().trim();
+
+        const isChallenger = (chHandle && chHandle === myHandle) ||
+          (chEmail && chEmail === myEmail) ||
+          (chName && chName === myName) ||
+          (serverData.challengerId === currentUid);
+
+        const updatedDuel = {
+          ...viewingDuel,
+          userScore: isChallenger ? (serverData.userScore || 0) : (serverData.opponentScore || 0),
+          opponentScore: isChallenger ? (serverData.opponentScore || 0) : (serverData.userScore || 0),
+          userMissions: isChallenger ? (serverData.userMissions || 0) : (serverData.opponentMissions || 0),
+          opponentMissions: isChallenger ? (serverData.opponentMissions || 0) : (serverData.userMissions || 0),
+          userFocusHours: isChallenger ? (serverData.userFocusHours || 0) : (serverData.opponentFocusHours || 0),
+          opponentFocusHours: isChallenger ? (serverData.opponentFocusHours || 0) : (serverData.userFocusHours || 0),
+          currentLeader: serverData.currentLeader || viewingDuel?.currentLeader,
+          duelMissions: serverData.duelMissions || viewingDuel?.duelMissions || [],
+          liveFeed: serverData.liveFeed || viewingDuel?.liveFeed || [],
+        };
+
+        if (typeof setViewingDuel === 'function') setViewingDuel(updatedDuel);
+        if (typeof setActiveDuels === 'function') {
+          setActiveDuels(prev => (prev || []).map(item => item.id === duelDocId ? updatedDuel : item));
+        }
+      }
+    }, () => {});
+
+    return () => unsub();
+  }, [duelDocId, currentUid, currentCharName]);
 
   if (!viewingDuel) return null;
 
@@ -140,6 +186,7 @@ export function ActiveDuelView() {
         userScore: updatedUserScore,
         userMissions: updatedMissionsCount,
         currentLeader: newLeader,
+        duelMissions: updatedMissionsList,
         liveFeed: [newFeedItem, ...(d.liveFeed || [])],
         updatedAt: new Date().toISOString(),
       }).catch(err => console.warn('[Update Duel Score Error]:', err));
@@ -160,7 +207,7 @@ export function ActiveDuelView() {
 
     const newCustom = {
       id: 'dm_cust_' + Date.now(),
-      name: customMissionTitle,
+      name: customMissionTitle.trim(),
       difficulty: customMissionDifficulty,
       xpReward: customMissionDifficulty === 'S-Rank' ? 150 : 100,
       dpReward: customMissionDifficulty === 'S-Rank' ? 75 : 50,
@@ -175,13 +222,22 @@ export function ActiveDuelView() {
 
     if (typeof setViewingDuel === 'function') setViewingDuel(updatedDuel);
     if (typeof setActiveDuels === 'function') setActiveDuels(prev => (prev || []).map(item => item.id === d.id ? updatedDuel : item));
+
+    // Save duelMissions to Firestore doc so opponent sees custom mission immediately
+    if (d.id) {
+      updateDoc(doc(db, 'duels', d.id), {
+        duelMissions: updatedMissionsList,
+        updatedAt: new Date().toISOString(),
+      }).catch(err => console.warn('[Add Custom Duel Mission Error]:', err));
+    }
+
     setCustomMissionTitle('');
     setShowCreateDuelMissionModal(false);
   };
 
   const handleLogTask = (pts, text) => {
     const updatedUserScore = userPts + pts;
-    const updatedMissions = d.userMissions + 1;
+    const updatedMissions = (d.userMissions || 0) + 1;
     const newLeader = updatedUserScore >= oppPts ? character.name : d.opponent.name;
 
     const newFeedItem = {
@@ -201,6 +257,17 @@ export function ActiveDuelView() {
 
     if (typeof setViewingDuel === 'function') setViewingDuel(updatedDuel);
     if (typeof setActiveDuels === 'function') setActiveDuels(prev => (prev || []).map(item => item.id === d.id ? updatedDuel : item));
+
+    if (d.id) {
+      updateDoc(doc(db, 'duels', d.id), {
+        userScore: updatedUserScore,
+        userMissions: updatedMissions,
+        currentLeader: newLeader,
+        liveFeed: [newFeedItem, ...(d.liveFeed || [])],
+        updatedAt: new Date().toISOString(),
+      }).catch(err => console.warn('[Log Task Error]:', err));
+    }
+
     setTaskNote('');
     setShowLogModal(false);
   };
@@ -227,6 +294,16 @@ export function ActiveDuelView() {
 
     if (typeof setViewingDuel === 'function') setViewingDuel(updatedDuel);
     if (typeof setActiveDuels === 'function') setActiveDuels(prev => (prev || []).map(item => item.id === d.id ? updatedDuel : item));
+
+    if (d.id) {
+      updateDoc(doc(db, 'duels', d.id), {
+        userScore: updatedUserScore,
+        userFocusHours: updatedFocusHours,
+        currentLeader: newLeader,
+        liveFeed: [newFeedItem, ...(d.liveFeed || [])],
+        updatedAt: new Date().toISOString(),
+      }).catch(err => console.warn('[Log Focus Hour Error]:', err));
+    }
   };
 
   return (
