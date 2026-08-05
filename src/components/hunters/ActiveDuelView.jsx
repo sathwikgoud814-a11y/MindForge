@@ -131,8 +131,8 @@ export function ActiveDuelView() {
       liveFeed: [newFeedItem, ...(d.liveFeed || [])],
     };
 
-    setViewingDuel(updatedDuel);
-    setActiveDuels(prev => (prev || []).map(item => item.id === d.id ? updatedDuel : item));
+    if (typeof setViewingDuel === 'function') setViewingDuel(updatedDuel);
+    if (typeof setActiveDuels === 'function') setActiveDuels(prev => (prev || []).map(item => item.id === d.id ? updatedDuel : item));
 
     // Persist score update directly to Firestore `duels/` collection
     if (d.id) {
@@ -173,8 +173,8 @@ export function ActiveDuelView() {
       duelMissions: updatedMissionsList,
     };
 
-    setViewingDuel(updatedDuel);
-    setActiveDuels(prev => (prev || []).map(item => item.id === d.id ? updatedDuel : item));
+    if (typeof setViewingDuel === 'function') setViewingDuel(updatedDuel);
+    if (typeof setActiveDuels === 'function') setActiveDuels(prev => (prev || []).map(item => item.id === d.id ? updatedDuel : item));
     setCustomMissionTitle('');
     setShowCreateDuelMissionModal(false);
   };
@@ -199,8 +199,8 @@ export function ActiveDuelView() {
       liveFeed: [newFeedItem, ...(d.liveFeed || [])],
     };
 
-    setViewingDuel(updatedDuel);
-    setActiveDuels(prev => (prev || []).map(item => item.id === d.id ? updatedDuel : item));
+    if (typeof setViewingDuel === 'function') setViewingDuel(updatedDuel);
+    if (typeof setActiveDuels === 'function') setActiveDuels(prev => (prev || []).map(item => item.id === d.id ? updatedDuel : item));
     setTaskNote('');
     setShowLogModal(false);
   };
@@ -225,8 +225,8 @@ export function ActiveDuelView() {
       liveFeed: [newFeedItem, ...(d.liveFeed || [])],
     };
 
-    setViewingDuel(updatedDuel);
-    setActiveDuels(prev => (prev || []).map(item => item.id === d.id ? updatedDuel : item));
+    if (typeof setViewingDuel === 'function') setViewingDuel(updatedDuel);
+    if (typeof setActiveDuels === 'function') setActiveDuels(prev => (prev || []).map(item => item.id === d.id ? updatedDuel : item));
   };
 
   return (
